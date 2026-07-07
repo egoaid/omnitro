@@ -10507,6 +10507,11 @@ const MANUAL_SECTIONS = [
       <p>USB/BluetoothのMIDIキーボードを接続すると、自動的に認識され演奏に使えます。
       既定（<b>NORMAL</b>）では、ごく普通のMIDIキーボードとして半音階（ドレミファソラシド）で
       鳴ります。コードの選択状態には連動しません。</p>
+      <p>⚠️ <b>Safari（iPhone・iPad・Macのすべて）はWeb MIDI APIに対応していません。</b>
+      AppleがWebKitの仕様として非対応にしているため、iPhone/iPadでは他のブラウザ
+      （Chrome・Firefox等）を使っても中身はSafariと同じエンジンなので、MIDIキーボードは
+      認識されません。MIDIキーボードを使いたい場合は、Windows／macOS／Android上の
+      Chrome・Edge・Firefoxなどをご利用ください。</p>
       <h3>MIDI STRUM MODE（設定パネル）</h3>
       <p>SETTINGS →「REAL TIME CONTROL」の<b>MIDI STRUM MODE</b>をONにすると、鍵盤の演奏音が
       <b>今選んでいるコードの構成音だけ</b>に強制的にマッピングされます。鍵盤の位置
@@ -10531,6 +10536,11 @@ const MANUAL_SECTIONS = [
       <p>A connected USB/Bluetooth MIDI keyboard is detected automatically and ready to play.
       By default (<b>NORMAL</b>), it behaves like an ordinary MIDI keyboard, playing a plain
       chromatic scale — it is not tied to whatever chord is currently selected.</p>
+      <p>⚠️ <b>Safari (on iPhone, iPad, and Mac alike) does not support the Web MIDI API.</b>
+      Apple leaves it out of WebKit entirely, and since every browser on iOS/iPadOS — including
+      Chrome and Firefox — is required to use WebKit under the hood, a MIDI keyboard won't be
+      recognized on iPhone or iPad no matter which browser app you use. To play with a MIDI
+      keyboard, use Chrome, Edge, or Firefox on Windows, macOS, or Android instead.</p>
       <h3>MIDI STRUM MODE (in Settings)</h3>
       <p>Turn on <b>MIDI STRUM MODE</b> under Settings → "REAL TIME CONTROL" to force every note
       you play to be a note <b>from the currently selected chord only</b>. Key position (MIDI
@@ -10706,7 +10716,7 @@ const MANUAL_SECTIONS = [
         <tr><td>ドラムキット</td><td>9種類（808 / 909 / LM-1 / LOFI / TAPE / JAZZ / VINYL / MINIMAL / ACOUSTIC）＋ユーザー保存</td></tr>
         <tr><td>ドラムチャンネル</td><td>9系統（KICK, SNARE, HI-CL, HI-OP, RIM, COWBL, CLAP, TAMB, SHKR）</td></tr>
         <tr><td>PCキーボード演奏</td><td>対応（複数キー同時押し可）</td></tr>
-        <tr><td>MIDI入力</td><td>Web MIDI API対応。既定は半音階演奏、MIDI STRUM MODE ON時はノート36〜60（C2〜C4、2オクターブ＝25鍵）を選択中コードのストラムプレート配列（13音）にマッピング</td></tr>
+        <tr><td>MIDI入力</td><td>Web MIDI API対応。既定は半音階演奏、MIDI STRUM MODE ON時はノート36〜60（C2〜C4、2オクターブ＝25鍵）を選択中コードのストラムプレート配列（13音）にマッピング。※Safari（iPhone/iPad/Macとも）は非対応</td></tr>
         <tr><td>録音</td><td>最大10分。演奏(OMNI)／ドラム／マイク(VOCAL)を個別ステムで同時録音</td></tr>
         <tr><td>書き出し形式</td><td>WAV（16bit PCM）。MIX / VOCAL / omni / drum を個別に書き出し可能</td></tr>
         <tr><td>MIX STUDIOエフェクト</td><td>HPF、OTT（マルチバンド）、DE-ESS、GLUE COMP、BUS REVERB、LIMITER、4種プリセット</td></tr>
@@ -10726,7 +10736,7 @@ const MANUAL_SECTIONS = [
         <tr><td>Drum kits</td><td>9 (808 / 909 / LM-1 / LOFI / TAPE / JAZZ / VINYL / MINIMAL / ACOUSTIC), plus user-saved kits</td></tr>
         <tr><td>Drum channels</td><td>9 (KICK, SNARE, HI-CL, HI-OP, RIM, COWBL, CLAP, TAMB, SHKR)</td></tr>
         <tr><td>PC keyboard play</td><td>Supported, including multiple simultaneous keys</td></tr>
-        <tr><td>MIDI input</td><td>Web MIDI API; chromatic by default, or notes 36–60 (C2–C4, 2 octaves = 25 keys) mapped onto the selected chord's 13-note strumplate layout when MIDI STRUM MODE is on</td></tr>
+        <tr><td>MIDI input</td><td>Web MIDI API; chromatic by default, or notes 36–60 (C2–C4, 2 octaves = 25 keys) mapped onto the selected chord's 13-note strumplate layout when MIDI STRUM MODE is on. *Not supported on Safari (iPhone/iPad/Mac)</td></tr>
         <tr><td>Recording</td><td>Up to 10 minutes; instrument (OMNI), drums and mic (VOCAL) captured as separate stems simultaneously</td></tr>
         <tr><td>Export format</td><td>WAV (16-bit PCM); MIX / VOCAL / omni / drum can each be exported individually</td></tr>
         <tr><td>Mix Studio effects</td><td>HPF, OTT (multiband dynamics), DE-ESS, GLUE COMP, BUS REVERB, LIMITER, 4 presets</td></tr>

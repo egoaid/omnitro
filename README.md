@@ -13,6 +13,7 @@
 
 - [特徴](#特徴)
 - [使い方](#使い方)
+- [既知の制限](#既知の制限)
 - [PWAとしてインストール](#pwaとしてインストール)
 - [ファイル構成](#ファイル構成)
 - [技術スタック](#技術スタック)
@@ -30,7 +31,7 @@
 - **リズムマシン** — 58種類の内蔵パターン × 9種類のドラムキット、専用のRHYTHM EDITOR / KIT EDITORで自作・保存も可能
 - **録音 & MIX STUDIO** — 演奏（OMNI）・ドラム・マイク（VOCAL）を個別ステムで同時録音し、プリセット付きのミキサーで書き出し
 - **PCキーボード演奏** — マウス操作に加え、キーボードでもコードボタンを演奏可能
-- **MIDI対応** — MIDIキーボードでの演奏に対応。「MIDI STRUM MODE」ONで、鍵盤演奏を現在選択中のコードの音だけに強制マッピングし、ストラムプレートをそのまま鍵盤で弾ける
+- **MIDI対応** — MIDIキーボードでの演奏に対応。「MIDI STRUM MODE」ONで、鍵盤演奏を現在選択中のコードの音だけに強制マッピングし、ストラムプレートをそのまま鍵盤で弾ける（※Safari／iPhone・iPadは非対応。後述）
 - **PWA対応** — ホーム画面に追加してアプリのように利用可能（オフライン対応）
 - **日本語 / English** — アプリ内マニュアルは日英切り替え対応
 
@@ -48,6 +49,13 @@
 
 ---
 
+## 既知の制限
+
+- **Safari（iPhone・iPad・Macのすべて）ではMIDIキーボードが使えません。** Web MIDI APIにAppleが対応していないためです。iOS/iPadOSでは、Chrome・Firefoxなど他のブラウザアプリも内部エンジンはSafariと同じ（WebKit）ため、同様にMIDIキーボードは認識されません。MIDIキーボードを使いたい場合は、Windows／macOS／AndroidのChrome・Edge・Firefox等をご利用ください。
+- PCキーボード演奏・マウス／タッチでのコード演奏・ストラムプレートなど、MIDI以外の機能はSafari／iOSでも問題なく動作します。
+
+---
+
 ## PWAとしてインストール
 
 - **Android / デスクトップ Chrome**: アドレスバーの「インストール」アイコン、またはメニューから「アプリをインストール」
@@ -58,7 +66,6 @@
 ---
 
 ## ファイル構成
-
 
 ```
 .
@@ -74,8 +81,6 @@
 ├── LICENSE                 # ライセンス条文
 └── README.md                # このファイル
 ```
-
-> Service Workerはブラウザの仕様上、単体のHTMLファイルに埋め込むことができないため、`sw.js`は独立したファイルとして`index.html`と同じ階層に置く必要があります。
 
 ---
 
@@ -101,7 +106,6 @@
 © 2026 Takeshi Kawamoto. All rights reserved.
 
 ---
----
 
 ## Features (English)
 
@@ -113,11 +117,16 @@
 - **Rhythm machine** — 58 built-in patterns × 9 drum kits, with a full Rhythm Editor / Kit Editor for creating and saving your own
 - **Recording & Mix Studio** — record instrument (OMNI), drums, and mic (VOCAL) as separate stems simultaneously, then mix down with presets and export
 - **PC keyboard play** — play chord buttons from your keyboard, not just the mouse
-- **MIDI support** — play from a MIDI keyboard; turn on "MIDI STRUM MODE" to force every note into the currently selected chord's strumplate layout, effectively playing the strumplate from your MIDI keyboard
+- **MIDI support** — play from a MIDI keyboard; turn on "MIDI STRUM MODE" to force every note into the currently selected chord's strumplate layout, effectively playing the strumplate from your MIDI keyboard (*not supported on Safari/iPhone/iPad — see below*)
 - **PWA-ready** — installable, works offline after first load
 - **Japanese / English** — the in-app manual switches between both languages
 
 Open the in-app manual anytime from the "📖 MANUAL" button in Settings.
+
+### Known limitations
+
+- **MIDI keyboards don't work on Safari (iPhone, iPad, or Mac).** Apple has not implemented the Web MIDI API in WebKit. Since every browser on iOS/iPadOS — including Chrome and Firefox — is required to use WebKit under the hood, no browser on iPhone/iPad can access a MIDI keyboard. To use a MIDI keyboard, use Chrome, Edge, or Firefox on Windows, macOS, or Android.
+- Everything else — PC keyboard play, mouse/touch chord play, the strumplate, recording, etc. — works fine on Safari/iOS.
 
 ### Running it
 
