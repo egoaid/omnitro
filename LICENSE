@@ -1,0 +1,56 @@
+omnitro（オムニトロ）— LICENSE
+
+Copyright (c) 2026 Takeshi Kawamoto
+All rights reserved.
+
+------------------------------------------------------------------------------
+日本語
+------------------------------------------------------------------------------
+
+本ソフトウェア（omnitro／オムニトロ）を構成するソースコード、音色（ボイス）・音源、
+画像、その他一切の素材（以下「本アプリ」）の著作権は作者（Takeshi Kawamoto）に帰属し、
+全ての権利を留保します。
+
+【禁止事項】
+以下の行為は、非営利目的であっても禁止します。
+  1. 本アプリの複製、改変、再配布
+  2. 本アプリの全部または一部の販売、有償頒布
+  3. 本アプリを改変した二次的著作物の作成・公開・配布
+  4. 本アプリに含まれる音色（ボイス）・音源をサンプリング／抽出し、
+     音源データ・サンプルパック・プリセット集等として配布または販売する行為
+
+上記行為を行う場合は、事前に著作権者（Takeshi Kawamoto）の書面による許諾が必要です。
+
+【許可事項】
+本アプリを使用して制作した楽曲・音楽作品・演奏の録音物など（以下「成果物」）については、
+本ライセンスによる制限を受けません。成果物の商用利用（販売、配信、公開等を含む）は自由に
+行っていただけます。
+
+本リポジトリの閲覧・フォークはGitHubの通常機能の範囲で行えますが、上記【禁止事項】に
+該当する利用（本アプリ自体の複製・改変・再配布・販売等）を許可するものではありません。
+
+------------------------------------------------------------------------------
+English
+------------------------------------------------------------------------------
+
+The source code, voices/sounds, images, and all other assets that make up this
+software ("omnitro", the "App") are copyrighted by the author (Takeshi Kawamoto).
+All rights are reserved.
+
+PROHIBITED (even for non-commercial purposes):
+  1. Copying, modifying, or redistributing the App
+  2. Selling or otherwise distributing the App, in whole or in part, for a fee
+  3. Creating, publishing, or distributing derivative works based on the App
+  4. Sampling or extracting the App's voices/sounds and distributing or selling
+     them as sound data, a sample pack, a preset library, or similar product
+
+Written permission from the copyright holder (Takeshi Kawamoto) is required
+before doing any of the above.
+
+PERMITTED:
+Songs, musical works, and recordings ("Works") that you create using the App
+are not restricted by this license. You are free to use Works commercially,
+including selling, distributing, and publishing them.
+
+Viewing or forking this repository through GitHub's normal functionality does
+not grant permission for any of the prohibited uses listed above.
