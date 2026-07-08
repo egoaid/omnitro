@@ -14,6 +14,7 @@
 - [特徴](#特徴)
 - [使い方](#使い方)
 - [既知の制限](#既知の制限)
+- [既知の不具合](#既知の不具合)
 - [PWAとしてインストール](#pwaとしてインストール)
 - [ファイル構成](#ファイル構成)
 - [技術スタック](#技術スタック)
@@ -53,6 +54,30 @@
 
 - **Safari（iPhone・iPad・Macのすべて）ではMIDIキーボードが使えません。** Web MIDI APIにAppleが対応していないためです。iOS/iPadOSでは、Chrome・Firefoxなど他のブラウザアプリも内部エンジンはSafariと同じ（WebKit）ため、同様にMIDIキーボードは認識されません。MIDIキーボードを使いたい場合は、Windows／macOS／AndroidのChrome・Edge・Firefox等をご利用ください。
 - PCキーボード演奏・マウス／タッチでのコード演奏・ストラムプレートなど、MIDI以外の機能はSafari／iOSでも問題なく動作します。
+
+---
+
+## 既知の不具合
+
+### 🔴 ボーカル録音がSafari/iOSでモノラル（左チャンネルのみ）になる
+
+**症状:** Safari（macOS）またはiOS上の任意のブラウザ（iOSの全ブラウザはWebKitエンジン必須）でマイク録音を行うと、録音されたボーカルトラックが左チャンネルにのみ記録され、右チャンネルが無音になる。
+
+**原因:** マイク入力（`getUserMedia`）はMac・iPhoneいずれのハードウェアでも本質的にモノラル。現在の実装は`MediaStreamAudioSourceNode`を処理チェーンに接続する際のブラウザの自動モノラル→ステレオ・アップミックスに依存している。Chrome/Chromium系はこのアップミックスを正しく行うが、Safari/WebKitでは行われず、結果として左チャンネルのみの出力になる。
+
+**確認環境:** macOS Safari（Mac mini M4 Pro）／ iOS Safari（iPhone SE）
+
+**回避策:** 未実装。マイク信号を録音チェーンに入れる前に、`ChannelMergerNode`で明示的にステレオ複製する対応が必要。
+
+### 🔴 iOS、特に旧世代端末（iPhone SE等）でマルチトラック間の同期ズレ
+
+**症状:** 録音時、omni/drum/vocalの各ステムが互いに同期ズレを起こすことがある。iPhone SEで顕著に確認済み。デスクトップ（Mac mini M4 Pro）では未確認。
+
+**原因:** 現在のアーキテクチャは各ステム（`omni.wav`, `drum.wav`, `vocal.wav`, `mix.wav`）を**4つの独立した`MediaRecorder`インスタンス**で録音しており、それぞれが個別のエンコーダ・内部クロックを持ち、ほぼ同時だがサンプル精度ではないタイミング（`setTimeout`＋逐次`.start()`呼び出し）で開始される。この構造はメインスレッドの混雑に本質的に脆弱で、録音開始時のCPU/GC負荷が高いほど、4つのレコーダーの実際の開始タイミングの乖離が大きくなる。低スペック端末（旧世代iPhone）ほど影響を受けやすいが、これは**純粋なハードウェア限界というより構造的な問題**であり、負荷次第ではどの端末でも理論上発生しうる。
+
+**新しいハードウェアについて:** 新しいiPhoneへの移行はこの問題の発生頻度・深刻度を軽減すると期待されるが、**根本解決の保証にはならない**。4レコーダー構成は端末の速度によらず構造的に脆弱性を残す。
+
+**対応予定:** 単一録音経路アーキテクチャへの移行を計画中。1つの`MediaRecorder`（またはAudioWorklet）が単一クロック上で全チャンネルをインターリーブして記録し、ステムごとの分離は並行する独立レコーダー群ではなく、録音後のオフライン処理で行う設計に変更する。既存の`omnitro-v1.4.html`への統合前に、別ファイルでプロトタイプを構築・検証する予定。
 
 ---
 
@@ -127,6 +152,28 @@ Open the in-app manual anytime from the "📖 MANUAL" button in Settings.
 
 - **MIDI keyboards don't work on Safari (iPhone, iPad, or Mac).** Apple has not implemented the Web MIDI API in WebKit. Since every browser on iOS/iPadOS — including Chrome and Firefox — is required to use WebKit under the hood, no browser on iPhone/iPad can access a MIDI keyboard. To use a MIDI keyboard, use Chrome, Edge, or Firefox on Windows, macOS, or Android.
 - Everything else — PC keyboard play, mouse/touch chord play, the strumplate, recording, etc. — works fine on Safari/iOS.
+
+### Known issues
+
+#### 🔴 Vocal recording is mono-only on Safari / iOS (left channel only)
+
+**Symptom:** When recording vocals via microphone on Safari (macOS) or any browser on iOS (all iOS browsers use WebKit), the recorded vocal track is captured only in the left channel. The right channel remains silent.
+
+**Cause:** Microphone input (`getUserMedia`) is inherently mono on both Mac and iPhone hardware. The current implementation relies on the browser's automatic mono-to-stereo upmixing when connecting `MediaStreamAudioSourceNode` through the processing chain. Chrome/Chromium performs this upmix correctly; Safari/WebKit does not, resulting in left-channel-only output.
+
+**Confirmed on:** macOS Safari (Mac mini M4 Pro), iOS Safari (iPhone SE)
+
+**Workaround:** Not yet implemented. Requires explicit stereo duplication via `ChannelMergerNode` before the mic signal enters the recording chain.
+
+#### 🔴 Multi-track sync drift on iOS, especially older devices (e.g. iPhone SE)
+
+**Symptom:** When recording, the omni/drum/vocal stems can drift out of sync with each other. Confirmed severe on iPhone SE; not observed on desktop (Mac mini M4 Pro).
+
+**Cause:** The current architecture records each stem (`omni.wav`, `drum.wav`, `vocal.wav`, `mix.wav`) via **four independent `MediaRecorder` instances**, each with its own encoder and internal clock, started in near-simultaneous but not sample-accurate succession (`setTimeout` + sequential `.start()` calls). This is inherently vulnerable to main-thread congestion — the more CPU/GC pressure at recording start, the more the four recorders' actual start times diverge. Lower-powered devices (older iPhones) are more susceptible, but this is a **structural issue, not purely a hardware limitation** — sync could theoretically drift on any device under load.
+
+**On newer hardware:** Upgrading to a newer iPhone is expected to reduce the frequency/severity of this issue (less main-thread contention), but is **not a guaranteed fix** — the four-recorder architecture remains structurally susceptible regardless of device speed.
+
+**Planned fix:** Migrate to a single-recording-path architecture — one `MediaRecorder` (or AudioWorklet) captures all channels interleaved on a shared clock, with per-stem separation performed offline (post-recording) rather than via parallel independent recorders. A prototype will be built and validated in a separate file before merging into `omnitro-v1.4.html`.
 
 ### Running it
 
