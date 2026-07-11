@@ -1665,7 +1665,7 @@
       </div>
       <div class="control-row" style="margin-top:6px;">
         <div class="control-label">MIC LEVEL</div>
-        <input type="range" id="ctrl-mic-level" min="0" max="100" value="100">
+        <input type="range" id="ctrl-mic-level" min="0" max="300" value="100">
         <div class="control-value" id="val-mic-level">100</div>
       </div>
     </div>
@@ -8754,6 +8754,18 @@ function buildMusicChainNodes(ctx, buf, ss, playBus) {
   return { src, gain, hpf };
 }
 
+// ── DRUM チャンネル: gain → HPF → playBus（buildMusicChainNodesのDRUM版） ──
+// 以前は再生時にDRUM専用のチェーンが一切構築されておらず、DRUMのLEVEL/HPF
+// スライダーが再生中は完全に無効化されていた。この関数で omni と同じ構造の
+// 独立したチェーンを DRUM 設定（ss.drumVol/ss.drumHpf）で構築する。
+function buildDrumChainNodes(ctx, buf, ss, playBus) {
+  const src  = ctx.createBufferSource(); src.buffer = buf;
+  const gain = ctx.createGain(); gain.gain.value = ss.drumVol ?? 1.0;
+  const hpf  = ctx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value = ss.drumHpf ?? 20; hpf.Q.value = 0.5;
+  src.connect(gain); gain.connect(hpf); hpf.connect(playBus);
+  return { src, gain, hpf };
+}
+
 // ── VOCAL チャンネル: gain → HPF → [OTT] → [DeEss] → playBus ────────────────
 function buildVocalChainNodes(ctx, buf, ss, playBus) {
   const src  = ctx.createBufferSource(); src.buffer = buf;
@@ -8861,7 +8873,7 @@ function studioGraphDestroy() {
     if (studioState[k]) { try { studioState[k].disconnect(); } catch(e){} studioState[k] = null; }
   });
   destroyChain(studioState.instChain);  studioState.instChain  = null;
-  if (studioState.drumChain) { try { studioState.drumChain.src.stop(); } catch(e){} ['src','gain','hpf'].forEach(k => { try { studioState.drumChain[k].disconnect(); } catch(e){} }); studioState.drumChain = null; }
+  destroyChain(studioState.drumChain);  studioState.drumChain  = null;
   destroyChain(studioState.vocalChain); studioState.vocalChain = null;
 }
 
@@ -8874,18 +8886,20 @@ function studioPlay(offsetSec) {
   const off = offsetSec != null ? offsetSec : studioState.playStartBufOffset;
   const ss  = studioState;
 
-  // instBuf(masterOut=inst+drum) を再生バッファとして使う。
-  // drumBufは「stem分離用」であり、すでにinstBufに含まれているため
-  // 重ねて再生するとドラムが二重になる。
-  // → instBufのみをinstChainで再生し、drumChainは再生しない。
-  if (recState.instBuf) {
-    ss.instChain = buildMusicChainNodes(ctx, recState.instBuf, ss, ss.playBus);
-    ss.instChain.src.start(0, Math.min(off, recState.instBuf.duration));
+  // OMNI と DRUM をそれぞれ独立したバッファ（omniBuf / drumBuf）から個別の
+  // チェーンで再生する。以前は合算済みの instBuf（mixタップ）だけを OMNI の
+  // 設定で再生していたため、DRUMのLEVEL/HPFスライダーが再生に一切反映されず、
+  // OMNIスライダーが実質「マスター音量」のように両方を制御してしまっていた。
+  if (recState.omniBuf) {
+    ss.instChain = buildMusicChainNodes(ctx, recState.omniBuf, ss, ss.playBus);
+    ss.instChain.src.start(0, Math.min(off, recState.omniBuf.duration));
     ss.instChain.src.onended = () => { if (ss.playing) studioPause(); };
   }
 
-  // drumChainは再生しない（instBufに既に含まれているため二重再生防止）
-  // ※ drum.wav単体の試聴が必要な場合は将来的に別UIで対応
+  if (recState.drumBuf) {
+    ss.drumChain = buildDrumChainNodes(ctx, recState.drumBuf, ss, ss.playBus);
+    ss.drumChain.src.start(0, Math.min(off, recState.drumBuf.duration));
+  }
 
   if (recState.micBuf) {
     ss.vocalChain = buildVocalChainNodes(ctx, recState.micBuf, ss, ss.playBus);
@@ -8903,7 +8917,7 @@ function studioPlay(offsetSec) {
 
 function studioPause() {
   destroyChain(studioState.instChain);  studioState.instChain  = null;
-  if (studioState.drumChain) { try { studioState.drumChain.src.stop(); } catch(e){} ['src','gain','hpf'].forEach(k => { try { studioState.drumChain[k].disconnect(); } catch(e){} }); studioState.drumChain = null; }
+  destroyChain(studioState.drumChain);  studioState.drumChain  = null;
   destroyChain(studioState.vocalChain); studioState.vocalChain = null;
 
   if (studioState.playing && studioState.ctx) {
@@ -8951,9 +8965,9 @@ function studioDrawWaveform() {
   ctx2d.fillStyle = '#060e18';
   ctx2d.fillRect(0, 0, W, H);
 
-  // Draw inst=teal, drum=yellow-green, mic=purple
+  // Draw omni=teal, drum=yellow-green, mic=purple
   const tracks = [
-    { buf: recState.instBuf, color: 'rgba(79,195,247,0.7)' },
+    { buf: recState.omniBuf, color: 'rgba(79,195,247,0.7)' },
     { buf: recState.drumBuf, color: 'rgba(212,224,64,0.6)' },
     { buf: recState.micBuf,  color: 'rgba(167,139,250,0.55)' },
   ];
@@ -9199,12 +9213,13 @@ async function studioExport() {
   const ts      = tsStr();
 
   try {
-    // instBuf = masterOut録音（inst+drum合算、mix.wav用）
-    // omniBuf = instBus録音（コンプ前のomniのみ、omni.wav用）
-    // drumBuf = drumBus録音（drumのみ）
-    // vocalBuf = mic
+    // omniBuf = instBus録音（コンプ前のomniのみ、omni.wav用、OMNI設定を適用）
+    // drumBuf = drumBus録音（drumのみ、drum.wav用、DRUM設定を適用）
+    // micBuf  = mic録音（mic.wav用）
+    // mix.wav は「OMNI設定適用済みomni」+「DRUM設定適用済みdrum」+「vocal」を
+    // 合算して作る。以前は合算済みの instBuf（mixタップ）をそのままOMNI設定で
+    // 処理していたため、DRUMのLEVEL/HPF設定がmix.wavに一切反映されなかった。
 
-    const mixR   = recState.instBuf ? await renderInst(recState.instBuf)  : null;
     const omniR  = recState.omniBuf ? await renderInst(recState.omniBuf)  : null;
     const drumR  = recState.drumBuf ? await renderDrum(recState.drumBuf)  : null;
     const vocalR = recState.micBuf  ? await renderVocal(recState.micBuf) : null;
@@ -9235,9 +9250,9 @@ async function studioExport() {
       await new Promise(r => setTimeout(r, 300));
     }
 
-    // mix.wav = masterOut録音（inst+drum）+ vocal
-    if (doMix && mixR) {
-      let mixed = mixR;
+    // mix.wav = omni（OMNI設定適用済み）+ drum（DRUM設定適用済み）+ vocal を合算
+    if (doMix && (omniR || drumR)) {
+      let mixed = await mixBuffers(omniR, drumR);
       if (vocalR) mixed = await mixBuffers(mixed, vocalR);
       dlBlob(encodeWav(await finalize(mixed)), 'omnitro-mix-'+ts+'.wav');
     }
