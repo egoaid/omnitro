@@ -3,70 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>omnitro v1.4 — オムニトロ｜コード×ストラムプレートで弾くブラウザ楽器</title>
-
-<!-- ─── SEO / AIO（検索エンジン・AI要約向け） ─── -->
-<meta name="description" content="omnitro（オムニトロ）は、コードボタンとストラムプレートで演奏するブラウザ楽器アプリ。全108コード、10種類の音色、58種類のリズムパターン、9種類のドラムキット、録音・MIX STUDIO、PCキーボード／MIDIキーボード演奏に対応。インストール不要、ブラウザだけで演奏できます。">
-<meta name="keywords" content="omnitro,オムニトロ,ストラムプレート,コード楽器,ブラウザ楽器,Web Audio API,Tone.js,弾き語り,作曲,リズムマシン,オムニコード風">
-<meta name="author" content="Takeshi Kawamoto">
-<meta name="robots" content="index, follow">
-<meta name="application-name" content="omnitro">
-<link rel="canonical" href="https://egoaid.github.io/omnitro/">
-
-<!-- Open Graph -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="omnitro">
-<meta property="og:title" content="omnitro（オムニトロ）— コード×ストラムプレートで弾くブラウザ楽器">
-<meta property="og:description" content="全108コード×ストラムプレートで演奏できるブラウザ楽器アプリ。リズムマシン・録音・MIDI対応、インストール不要。">
-<meta property="og:url" content="https://egoaid.github.io/omnitro/">
-<meta property="og:image" content="https://egoaid.github.io/omnitro/icons/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:locale" content="ja_JP">
-<meta property="og:locale:alternate" content="en_US">
-
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="omnitro（オムニトロ）— コード×ストラムプレートで弾くブラウザ楽器">
-<meta name="twitter:description" content="全108コード×ストラムプレートで演奏できるブラウザ楽器アプリ。リズムマシン・録音・MIDI対応、インストール不要。">
-<meta name="twitter:image" content="https://egoaid.github.io/omnitro/icons/og-image.png">
-
-<!-- ─── PWA ─── -->
-<meta name="theme-color" content="#0d1b2a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="omnitro">
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
-
-<!-- ─── 構造化データ（JSON-LD / schema.org） ─── -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  "name": "omnitro（オムニトロ）",
-  "alternateName": "omnitro",
-  "description": "コードボタンとストラムプレートで演奏するブラウザ楽器アプリ。全108コード、10種類の音色、58種類のリズムパターン、9種類のドラムキット、録音・MIX STUDIO、PCキーボード／MIDIキーボード演奏に対応。",
-  "url": "https://egoaid.github.io/omnitro/",
-  "image": "https://egoaid.github.io/omnitro/icons/og-image.png",
-  "applicationCategory": "MusicApplication",
-  "operatingSystem": "Any (Web Browser)",
-  "browserRequirements": "Requires JavaScript and the Web Audio API. Google Chrome recommended.",
-  "inLanguage": ["ja", "en"],
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
-  "author": { "@type": "Person", "name": "Takeshi Kawamoto" },
-  "copyrightHolder": { "@type": "Person", "name": "Takeshi Kawamoto" },
-  "copyrightYear": "2026",
-  "license": "https://github.com/egoaid/omnitro/blob/main/LICENSE",
-  "codeRepository": "https://github.com/egoaid/omnitro"
-}
-</script>
-
+<title>omnitro v1.4 — オムニトロ</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
-
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
@@ -110,7 +49,7 @@
   }
 
   /* ─── HEADER ─── */
-  #header, .header-bar {
+  #header {
     display: flex;
     align-items: flex-end;
     gap: 6px;
@@ -774,8 +713,8 @@
   }
 
   .settings-footer {
-    padding: 14px 16px 12px;
-    margin-top: 4px;
+    flex-shrink: 0;
+    padding: 8px 16px 12px;
     border-top: 1px solid #1a2a3a;
     text-align: center;
   }
@@ -790,40 +729,6 @@
     font-size: 8px;
     color: var(--text-dim);
     letter-spacing: 0.5px;
-  }
-  .settings-license {
-    font-size: 8px;
-    color: var(--text-dim);
-    letter-spacing: 0.5px;
-    margin-top: 6px;
-    line-height: 1.6;
-  }
-  .settings-license a {
-    color: var(--strumglow);
-    text-decoration: none;
-    border-bottom: 1px dotted rgba(79,195,247,0.5);
-  }
-  .settings-license a:hover { color: var(--accent1); }
-  .settings-footer-links {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 6px;
-  }
-  .settings-footer-links a {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 1px;
-    color: var(--text-dim);
-    text-decoration: none;
-    border: 1px solid #1a3a5a;
-    border-radius: 4px;
-    padding: 4px 8px;
-    transition: all 0.12s;
-  }
-  .settings-footer-links a:hover {
-    color: var(--strumglow);
-    border-color: var(--strumglow);
   }
 
   .settings-header {
@@ -1160,6 +1065,10 @@
     cursor: pointer;
     letter-spacing: 1px;
   }
+  .export-check-label:has(input:disabled) {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
   .export-check-label input[type=checkbox] {
     accent-color: var(--accent3);
     width: 13px; height: 13px;
@@ -1170,7 +1079,7 @@
   .studio-ch-header {
     display: grid;
     grid-template-columns: 56px 1fr 1fr;
-    gap: 3px;
+    gap: 4px;
     margin-bottom: 6px;
     border-bottom: 1px solid #1a3a5a;
     padding-bottom: 4px;
@@ -1178,21 +1087,26 @@
   .studio-ch-label {
     font-family: 'Orbitron', sans-serif;
     font-size: 8px;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     text-align: center;
     padding: 2px 0;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
   .studio-ch-label.music-col { color: var(--accent3); }
   .studio-ch-label.vocal-col { color: #a78bfa; }
 
+  /* チャンネル未録音時（mic未接続 / drum未収録）にグレーアウトして操作不可にする。
+     display:none で消すと3列レイアウトが崩れる（列が可変になりスライダーが
+     はみ出すことがあった）ため、常に3列を維持したまま視覚的に無効化する。 */
+  .ch-col-disabled {
+    opacity: 0.32;
+    pointer-events: none;
+    filter: grayscale(70%);
+  }
+
   .studio-ch-row {
     display: grid;
     grid-template-columns: 56px 1fr 1fr;
-    gap: 3px;
+    gap: 4px;
     align-items: center;
     margin-bottom: 5px;
   }
@@ -1201,15 +1115,13 @@
     color: var(--text-dim);
     letter-spacing: 1px;
     text-align: right;
-    padding-right: 4px;
+    padding-right: 6px;
     white-space: nowrap;
-    overflow: hidden;
   }
   .studio-ch-ctrl {
     display: flex;
     align-items: center;
-    gap: 3px;
-    min-width: 0;   /* グリッドアイテムの自動最小サイズによるはみ出し(grid blowout)を防止 */
+    gap: 4px;
   }
   .ch-slider {
     flex: 1;
@@ -1223,7 +1135,7 @@
   .ch-val {
     font-size: 8px;
     color: var(--accent1);
-    min-width: 20px;
+    min-width: 24px;
     text-align: right;
     flex-shrink: 0;
   }
@@ -1436,7 +1348,7 @@
     letter-spacing: 1px; width: 48px; flex-shrink: 0;
   }
   .spp-slider {
-    flex: 1; min-width: 0; width: 100%; height: 3px; accent-color: var(--accent1);
+    flex: 1; height: 3px; accent-color: var(--accent1);
     background: #1a2a3a; border-radius: 2px; cursor: pointer;
   }
   .spp-val {
@@ -1452,10 +1364,6 @@
     padding: 4px; border: 1px solid #2a4a6a;
     background: #0e1c2c; color: var(--text-dim);
   }
-  /* 小型トグル（GHOSTスイッチ等）: ノブサイズも縮小してはみ出しを防ぐ */
-  .toggle.toggle-mini { width: 28px; height: 14px; flex-shrink: 0; }
-  .toggle.toggle-mini::after { width: 10px; height: 10px; top: 1px; left: 2px; }
-  .toggle.toggle-mini.on::after { left: 14px; }
   /* セルの左上に小さなインジケーターを表示 */
   .rstep .step-vel-dot {
     position: absolute; bottom: 2px; left: 2px;
@@ -1492,146 +1400,6 @@
   .rstep.step-active {
     box-shadow: 0 0 0 2px rgba(232,201,90,0.95),
                 inset 0 0 8px rgba(232,201,90,0.25) !important;
-  }
-
-  /* ─── MANUAL OVERLAY ─── */
-  #manual-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(180deg, #0a0f18 0%, #060c14 100%);
-    z-index: 400;
-    flex-direction: column;
-    max-width: 430px;
-    margin: 0 auto;
-    overflow: hidden;
-  }
-  #manual-overlay.open { display: flex; }
-
-  .manual-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: linear-gradient(90deg, #0a0f1a, #111827, #0a0f1a);
-    border-bottom: 1px solid #1a3a5a;
-    flex-shrink: 0;
-  }
-  .manual-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    color: var(--accent1);
-    letter-spacing: 2px;
-    flex: 1;
-  }
-  .manual-lang-btn {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 8px;
-    letter-spacing: 1px;
-    border-radius: 4px;
-    cursor: pointer;
-    padding: 5px 9px;
-    border: 1px solid #2a4a6a;
-    background: #0e1c2c;
-    color: var(--text-dim);
-    transition: all 0.12s;
-  }
-  .manual-lang-btn.active {
-    border-color: var(--strumglow);
-    color: var(--strumglow);
-    background: #001424;
-  }
-  .manual-close-btn {
-    background: #1a2a3a; border: 1px solid #2a4a6a;
-    color: var(--text-dim); width: 28px; height: 28px;
-    border-radius: 4px; cursor: pointer; font-size: 14px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .manual-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 16px 24px;
-  }
-
-  .manual-sec {
-    margin-bottom: 22px;
-  }
-  .manual-sec-num {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 9px;
-    color: var(--accent1);
-    letter-spacing: 2px;
-    opacity: 0.75;
-  }
-  .manual-sec h2 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 12px;
-    color: var(--strumglow);
-    letter-spacing: 1px;
-    margin: 2px 0 8px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid #1a3a5a;
-  }
-  .manual-sec h3 {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--accent1);
-    letter-spacing: 1px;
-    margin: 10px 0 4px;
-  }
-  .manual-sec p {
-    font-size: 11px;
-    line-height: 1.7;
-    color: var(--text-bright);
-    margin-bottom: 8px;
-  }
-  .manual-sec ul {
-    margin: 0 0 8px 0;
-    padding-left: 18px;
-  }
-  .manual-sec li {
-    font-size: 11px;
-    line-height: 1.65;
-    color: var(--text-bright);
-    margin-bottom: 4px;
-  }
-  .manual-sec b { color: var(--accent1); font-weight: 700; }
-  .manual-kbd {
-    display: inline-block;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--strumglow);
-    background: #0a1828;
-    border: 1px solid #1a3a5a;
-    border-radius: 3px;
-    padding: 1px 5px;
-    margin: 1px 2px 1px 0;
-  }
-
-  .manual-spec-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 4px;
-  }
-  .manual-spec-table tr { border-bottom: 1px solid #10202e; }
-  .manual-spec-table tr:last-child { border-bottom: none; }
-  .manual-spec-table td {
-    font-size: 10px;
-    padding: 6px 4px;
-    vertical-align: top;
-    line-height: 1.5;
-  }
-  .manual-spec-table td:first-child {
-    color: var(--text-dim);
-    letter-spacing: 1px;
-    white-space: nowrap;
-    padding-right: 10px;
-    width: 38%;
-  }
-  .manual-spec-table td:last-child {
-    color: var(--text-bright);
   }
 
 </style>
@@ -1741,7 +1509,7 @@
 
 <!-- SETTINGS OVERLAY (full screen) -->
 <div id="settings-overlay">
-  <div class="header-bar" style="flex-shrink:0;">
+  <div id="header" style="flex-shrink:0;">
     <div class="logo-area">
       <div class="logo-brand">オムニトロ</div>
       <div class="logo-model">omnitro</div>
@@ -1895,7 +1663,7 @@
       </div>
       <div class="control-row" style="margin-top:6px;">
         <div class="control-label">MIC LEVEL</div>
-        <input type="range" id="ctrl-mic-level" min="0" max="300" value="100">
+        <input type="range" id="ctrl-mic-level" min="0" max="100" value="100">
         <div class="control-value" id="val-mic-level">100</div>
       </div>
     </div>
@@ -1910,42 +1678,15 @@
         <div class="toggle-label">CHORD HOLD</div>
         <div class="toggle on" id="tog-chord-hold"></div>
       </div>
-      <div class="toggle-row">
-        <div class="toggle-label">MIDI STRUM MODE</div>
-        <div class="toggle" id="tog-midi-strum"></div>
-      </div>
 
     </div>
 
-    <div class="settings-group">
-      <div class="settings-group-label">HELP</div>
-      <button id="open-manual-btn" style="width:100%;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:9px 10px;border:1px solid var(--accent1);background:#1a1400;color:var(--accent1);">📖 MANUAL / 取扱説明書</button>
-    </div>
+  </div>
 
-    <!-- バージョン表記 + 著作権 + ライセンス + GitHub（スクロール末尾。固定フッターにはしない） -->
-    <div class="settings-footer">
-      <div class="settings-version">omnitro v1.4</div>
-      <div class="settings-copyright">© 2026 Takeshi Kawamoto All rights reserved.</div>
-      <div class="settings-license">
-        本アプリ（コード・音色／音源・素材一式）の著作権は作者に帰属し、全ての権利を留保します。<br>
-        本アプリ自体の複製・改変・再配布・販売は、<b>非営利であっても禁止</b>します。<br>
-        本アプリの音色（ボイス）をサンプリングし、音源・サンプルパック等として配布・販売することも
-        禁止します。<br>
-        一方で、本アプリを使って制作した楽曲などの<b>成果物の商用利用は自由</b>です。<br>
-        <br>
-        This app (code, sounds/voices, and all assets) is proprietary — all rights are reserved by
-        the author. Copying, modifying, redistributing, or selling the app itself is prohibited,
-        even for non-commercial purposes. Sampling or extracting this app's voices/sounds to
-        distribute or sell (e.g. as a sound library or sample pack) is also prohibited. However,
-        songs and other works you create using this app are yours to use freely, including
-        commercially.
-      </div>
-      <div class="settings-footer-links">
-        <a href="https://github.com/egoaid/omnitro" target="_blank" rel="noopener noreferrer">↗ GitHub</a>
-        <a href="https://github.com/egoaid/omnitro/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">↗ LICENSE</a>
-      </div>
-    </div>
-
+  <!-- フッター: バージョン表記 + 著作権 -->
+  <div class="settings-footer">
+    <div class="settings-version">omnitro v1.4</div>
+    <div class="settings-copyright">© 2026 Takeshi Kawamoto All rights reserved.</div>
   </div>
 
 </div>
@@ -1970,7 +1711,7 @@
   </div>
   <div class="spp-row" id="spp-ghost-row">
     <div class="spp-label">GHOST</div>
-    <div class="toggle toggle-mini" id="spp-ghost-tog"></div>
+    <div class="toggle" id="spp-ghost-tog" style="width:28px;height:14px;"></div>
     <div class="spp-val" id="spp-ghost-val" style="color:var(--text-dim);">OFF</div>
   </div>
   <button class="spp-close" id="spp-close-btn">DONE</button>
@@ -2140,17 +1881,6 @@
   </div>
 </div>
 
-<!-- MANUAL OVERLAY -->
-<div id="manual-overlay">
-  <div class="manual-header">
-    <div class="manual-title">MANUAL</div>
-    <button class="manual-lang-btn" id="manual-lang-ja" data-lang="ja">日本語</button>
-    <button class="manual-lang-btn" id="manual-lang-en" data-lang="en">ENGLISH</button>
-    <button class="manual-close-btn" id="manual-close-btn">✕</button>
-  </div>
-  <div class="manual-body" id="manual-body"></div>
-</div>
-
 <!-- MIX STUDIO OVERLAY -->
 <div id="mix-studio">
   <div class="studio-header">
@@ -2183,50 +1913,50 @@
       </div>
     </div>
 
-    <!-- Channel strip: MUSIC + VOCAL side by side -->
+    <!-- Channel strip: OMNI + DRUM + MIC を常に均等な3列で表示（未収録時はグレーアウト） -->
     <div class="studio-section">
-      <div class="studio-ch-header" style="grid-template-columns:40px 1fr 1fr 1fr;">
+      <div class="studio-ch-header" style="grid-template-columns:46px 1fr 1fr 1fr;">
         <div class="studio-ch-label" style="color:var(--strumglow);">OMNI</div>
-        <div class="studio-ch-label" style="color:#d4e040;" id="drum-col-label">DRUM</div>
-        <div class="studio-ch-label vocal-col" id="vocal-col-label" style="color:#a78bfa;">VOCAL</div>
+        <div class="studio-ch-label drum-col" style="color:#d4e040;" id="drum-col-label">DRUM</div>
+        <div class="studio-ch-label vocal-col" id="vocal-col-label" style="color:#a78bfa;">MIC</div>
       </div>
       <!-- Level -->
-      <div class="studio-ch-row" style="grid-template-columns:40px 1fr 1fr 1fr;">
+      <div class="studio-ch-row" style="grid-template-columns:46px 1fr 1fr 1fr;">
         <div class="studio-ch-param">LEVEL</div>
         <div class="studio-ch-ctrl">
           <input type="range" class="ch-slider" id="s-music-vol" min="0" max="150" value="100">
           <div class="ch-val" id="v-music-vol">100</div>
         </div>
-        <div class="studio-ch-ctrl" id="drum-level-row">
+        <div class="studio-ch-ctrl drum-col" id="drum-level-row">
           <input type="range" class="ch-slider" id="s-drum-vol" min="0" max="150" value="100">
           <div class="ch-val" id="v-drum-vol">100</div>
         </div>
         <div class="studio-ch-ctrl vocal-col" id="vocal-level-row">
-          <input type="range" class="ch-slider" id="s-vocal-vol" min="0" max="220" value="100">
+          <input type="range" class="ch-slider" id="s-vocal-vol" min="0" max="150" value="100">
           <div class="ch-val" id="v-vocal-vol">100</div>
         </div>
       </div>
       <!-- HPF -->
-      <div class="studio-ch-row" style="grid-template-columns:40px 1fr 1fr 1fr;">
+      <div class="studio-ch-row" style="grid-template-columns:46px 1fr 1fr 1fr;">
         <div class="studio-ch-param">HPF Hz</div>
         <div class="studio-ch-ctrl">
           <input type="range" class="ch-slider" id="s-music-hpf" min="20" max="500" value="20" step="10">
           <div class="ch-val" id="v-music-hpf">20</div>
         </div>
-        <div class="studio-ch-ctrl">
+        <div class="studio-ch-ctrl drum-col" id="drum-hpf-row">
           <input type="range" class="ch-slider" id="s-drum-hpf" min="20" max="500" value="20" step="10">
           <div class="ch-val" id="v-drum-hpf">20</div>
         </div>
-        <div class="studio-ch-ctrl vocal-col">
+        <div class="studio-ch-ctrl vocal-col" id="vocal-hpf-row">
           <input type="range" class="ch-slider" id="s-vocal-hpf" min="20" max="500" value="80" step="10">
           <div class="ch-val" id="v-vocal-hpf">80</div>
         </div>
       </div>
     </div>
 
-    <!-- Vocal Dynamics -->
+    <!-- Mic Dynamics -->
     <div class="studio-section" id="vocal-eq-section">
-      <div class="studio-section-label">VOCAL — DYNAMICS</div>
+      <div class="studio-section-label">MIC — DYNAMICS</div>
       <div class="control-row">
         <div class="control-label">OTT</div>
         <input type="range" id="s-ott" min="0" max="100" value="0">
@@ -2269,7 +1999,7 @@
       <div class="studio-section-label">EXPORT</div>
       <div class="export-checks" style="margin-bottom:10px;">
         <label class="export-check-label"><input type="checkbox" id="chk-mix" checked> MIX.wav</label>
-        <label class="export-check-label"><input type="checkbox" id="chk-vocal"> VOCAL.wav</label>
+        <label class="export-check-label"><input type="checkbox" id="chk-vocal"> MIC.wav</label>
         <label class="export-check-label"><input type="checkbox" id="chk-music"> omni.wav</label>
         <label class="export-check-label"><input type="checkbox" id="chk-drum"> drum.wav</label>
       </div>
@@ -2304,7 +2034,6 @@ const state = {
   lastStrumX: null,
   tremoloRate: 5.0,   // Hz
   tremoloDepth: 0.7,  // 深め（0=なし、1=最大）
-  midiStrumMode: false, // false=通常の半音階演奏 / true=MIDIノートをストラムプレートの音配列に強制マッピング
 };
 
 // ─── MUSIC THEORY ─────────────────────────────────────────────────────────────
@@ -2524,6 +2253,10 @@ async function ensureAudio() {
     syncStrumplateVolumes();
   };
   _applySliders();
+
+  // 単一経路キャプチャ（録音）グラフを構築。ここでの失敗はライブ演奏には
+  // 一切影響しない（録音機能のみ無効化され、REC開始時にエラーを表示する）。
+  recCaptureInit().catch(e => console.warn('[REC] recCaptureInit failed:', e.message));
 }
 
 function syncStrumplateVolumes() {
@@ -2886,8 +2619,8 @@ const VOICE_DEFS = {
     },
     sub:  { type: 'strings', maxPolyphony: 5, osc: 'sawtooth', attack: 0.9, decay: 0.35, sustain: 0.65, release: 3.5, volumeOffset: -3, filters: [{ type: 'lowpass', frequency: 3200, Q: 0.55 }], drive: 0.005 },
   },
-  cheap: {
-    label: 'CHEAP',
+  casio: {
+    label: 'CASIO',
     main: {
       osc: 'square',
       attack: 0.008, decay: 0.18, sustain: 0.55, release: 1.6, volume: -10,
@@ -2945,51 +2678,17 @@ const VOICE_DEFS = {
     sub:  { type: 'strings8', maxPolyphony: 5, osc: 'sawtooth', attack: 0.65, decay: 0.25, sustain: 0.62, release: 3.2, volumeOffset: -3, filters: [{ type: 'lowpass', frequency: 3000, Q: 0.55 }], drive: 0.005 },
   },
   'FM piano': {
-    // DX7系エレピを狙った設計:
-    //   main       : ストラム用。レゾナントHPF/LPF(Q強め)で倍音をリンギングさせ、
-    //                速めのvibratoで金属的な揺らぎを追加。LPFは4kHz手前に抑えて耳に痛くならないようにする。
-    //   chord*     : コード保持(chordSynth)専用の滑らかなFMトーン。modulationIndexとフィルターQを
-    //                大幅に下げてサステインでの濁り・ノイジーさを解消。
-    //   tremolo    : コード保持側に振幅トレモロを追加。ストラム側はtremoloBoost/tremoloRateMulで
-    //                共有AMトレモロ(strumTremoloGain)を底上げし、全体にゆったりした揺れ感を出す。
-    //   sub        : 矩形波+レゾナントLPFで"パキッ"という短いFMベル的トランジェントを立ち上げ、
-    //                すぐサスティンを落としてmainの温かみに引き継ぐ（本物のFMエレピのアタック挙動）。
     label: 'FM PIANO',
     main: {
       osc: 'fmsine',
-      attack: 0.006, decay: 0.50, sustain: 0.48, release: 3.4, volume: -10,
+      attack: 0.008, decay: 0.65, sustain: 0.55, release: 3.6, volume: -10,
       filters: [
-        { type: 'highpass', frequency: 150,  Q: 1.3 },   // レゾナントHPF: 低域の輪郭に軽いエッジ
-        { type: 'lowpass',  frequency: 3300, Q: 2.4 },   // レゾナントLPF: カットオフ付近で金属的にリンギング
+        { type: 'highpass', frequency: 110, Q: 0.55 },
+        { type: 'lowpass', frequency: 3800, Q: 0.55 },
       ],
-      drive: 0.018,
-      vibratoRate: 6.3,      // 通常より速め = FM的な細かい揺らぎ
-      vibratoDepth: 0.0044,
-      harmonicity: 3.01,     // フォールバック値（chord*未使用時）
-      modulationIndex: 3,    // フォールバック値（chord*未使用時）
-
-      // ── 共有AMトレモロ（strumTremoloGain）をこの倍率で底上げ ──
-      tremoloBoost:   1.6,   // depth倍率
-      tremoloRateMul: 1.15,  // rate倍率（やや速め）
-
-      // ── コード保持(chordSynth)専用: 滑らかさ優先の別トーン ──
-      chordHarmonicity:     2.0,   // 3.01→2.0: 整数比寄りで濁りが少ない
-      chordModulationIndex: 2.2,   // 7→2.2: FM感は残しつつノイジーさを解消
-      chordFilters: [
-        { type: 'highpass', frequency: 120, Q: 0.6 },   // レゾナンスを落として濁り防止
-        { type: 'lowpass',  frequency: 2600, Q: 0.7 },
-      ],
-      chordDrive: 0,                              // コードには歪みをかけない
-      tremolo: { frequency: 4.6, depth: 0.55, wet: 0.9 },  // コード保持に振幅トレモロを追加
+      drive: 0.005,
     },
-    sub:  {
-      type: 'fmbell', maxPolyphony: 5,
-      osc: 'square',
-      attack: 0.004, decay: 0.30, sustain: 0.10, release: 1.5,
-      volumeOffset: -1,
-      filters: [{ type: 'lowpass', frequency: 3600, Q: 2.6 }],
-      drive: 0.01,
-    },
+    sub:  { type: 'pad', maxPolyphony: 5, osc: 'triangle', attack: 1.15, decay: 0.4, sustain: 0.70, release: 2.8, volumeOffset: -2, filters: [{ type: 'lowpass', frequency: 2600, Q: 0.55 }], drive: 0 },
   },
   organ: {
     label: 'ORGAN',
@@ -3062,12 +2761,6 @@ function createToneColorChain(profile, dest) {
     const c = new Tone.Chorus(profile.chorus);
     c.start();
     nodes.push(c);
-  }
-
-  if (profile?.tremolo) {
-    const t = new Tone.Tremolo(profile.tremolo);
-    t.start();
-    nodes.push(t);
   }
 
   if (nodes.length === 0) return dest;
@@ -3203,31 +2896,13 @@ function updateVoice(voiceName) {
   if (!chordGain) return;
 
   // ① コード専用 → chordGain (max 8音)
-  // fmsine/fmsquare/fmtriangle/fmsawtooth の場合、chordHarmonicity/chordModulationIndex
-  // （未指定ならharmonicity/modulationIndex）を本物の2オペレータFM変調として渡す。
-  // コード保持は持続音なのでstrumより控えめな値をフォールバックなしで優先する設計。
-  const chordOscConfig = { type: m.osc };
-  if (typeof m.osc === 'string' && m.osc.indexOf('fm') === 0) {
-    const chordHarm   = (m.chordHarmonicity     != null) ? m.chordHarmonicity     : m.harmonicity;
-    const chordModIdx = (m.chordModulationIndex != null) ? m.chordModulationIndex : m.modulationIndex;
-    if (chordHarm   != null) chordOscConfig.harmonicity     = chordHarm;
-    if (chordModIdx != null) chordOscConfig.modulationIndex = chordModIdx;
-  }
-  // コード保持専用のトーンカラー（chordFilters/chordDrive未指定ならmainのfilters/driveを流用）。
-  // tremoloはmainのtremolo定義があればコード保持にも適用する。
-  const chordColorProfile = {
-    filters: m.chordFilters || m.filters,
-    drive:   (m.chordDrive != null) ? m.chordDrive : m.drive,
-    chorus:  m.chorus,
-    tremolo: m.tremolo,
-  };
   chordSynth = new Tone.PolySynth(Tone.Synth, {
     maxPolyphony: 8,
-    oscillator: chordOscConfig,
+    oscillator: { type: m.osc },
     envelope: scaleEnvelope(m),
     detune: state.tuneCents || 0,
     volume: m.volume,
-  }).connect(createToneColorChain(chordColorProfile, chordGain));
+  }).connect(createToneColorChain(m, chordGain));
 
   // ② ストラム専用: Web Audio APIネイティブノードプール
   // strumTremoloGain経由でトレモロ効果を適用
@@ -3235,16 +2910,6 @@ function updateVoice(voiceName) {
 
   // ③ サブボイスは NativeStrumSynth 内部で主音に重ねる
   subSynth = null;
-
-  // ── ボイスごとの共有AMトレモロ（strumTremoloGain）の底上げ ──
-  // tremoloBoost/tremoloRateMul未指定のボイスは従来どおり(倍率1.0)で変化なし。
-  if (strumTremoloLfo && strumTremoloMod) {
-    const rateMul = (m.tremoloRateMul != null) ? m.tremoloRateMul : 1.0;
-    const boost   = (m.tremoloBoost   != null) ? m.tremoloBoost   : 1.0;
-    strumTremoloLfo.frequency.value = state.tremoloRate * rateMul;
-    strumTremoloMod.gain.value = Math.min(1.0, state.tremoloDepth * 0.22 * boost);
-  }
-
   syncStrumplateVolumes();
 }
 
@@ -6829,16 +6494,6 @@ function setupSettings() {
       state.chordAuto = chordAutoTog.classList.contains('on');
     });
   }
-
-  // MIDI STRUM MODE: ON=MIDIキーボードをストラムプレートの音配列に強制マッピング
-  //                   OFF=通常の半音階（既定）
-  const midiStrumTog = byId('tog-midi-strum');
-  if (midiStrumTog) {
-    state.midiStrumMode = midiStrumTog.classList.contains('on');
-    midiStrumTog.addEventListener('click', () => {
-      state.midiStrumMode = midiStrumTog.classList.contains('on');
-    });
-  }
 }
 
 // ─── RHYTHM CONTROLS ─────────────────────────────────────────────────────────
@@ -8089,46 +7744,44 @@ function setupRhythmEditor() {
 }
 
 
-// ─── RECORDING v2: Instrument + Mic, Mix Studio ───────────────────────────────
+// ─── RECORDING v3: Single-path AudioWorklet capture, Mix Studio ───────────────
 //
-// Architecture:
-//   Instrument tap  → _recMasterOut → instStreamDest → instMR  (MediaRecorder)
-//   Microphone      → micGain       → micStreamDest  → micMR   (MediaRecorder)
+// Architecture (replaces the former 4x-independent-MediaRecorder design):
+//   omni tap (_instBus) ──┐
+//   drum tap (_drumBus) ──┤
+//   vocal tap (mic, always-present _vocalCaptureBus) ──┤
+//   mix tap (_recMasterOut) ──┘
+//                             │ each mono→stereo duplicated via ChannelMergerNode
+//                             │ (never relies on browser auto-upmix — this also
+//                             │  fixes the Safari/iOS mono-vocal-left-channel bug)
+//                             ▼
+//                    8ch ChannelMergerNode → single AudioWorkletNode
+//                             │
+//              every render-quantum block (128 samples) carries all 8
+//              channels together — sync between stems is structural,
+//              not empirically close. Verified in a standalone prototype
+//              (recording-prototype-v1.html) under simulated main-thread
+//              congestion: sample counts matched exactly across all 8
+//              channels, drift between OMNI/DRUM ticks stayed <1ms across
+//              the whole recording, and vocal was captured true-stereo.
 //
-// On stop: both MediaRecorders stop → decodeAudioData → AudioBuffers kept in RAM
-// → Mix Studio opens (separate playback graph, never touches live nodes)
+// On stop: chunks are concatenated per channel and wrapped directly into
+// AudioBuffers (createBuffer + copyToChannel) — no MediaRecorder, no Opus/
+// WebM encode/decode round-trip at all, so no codec artifacts and no need
+// for the old "primer tone" silence-trimming workaround.
 //
-// Playback Graph (created fresh each studio open, destroyed on close):
-//   instBuf → instSrc → instPlayGain ──┐
-//   micBuf  → micSrc  → vocalChain    ─┼─► playBus → playComp → playOut → ctx.dest
-//                                       │
-// Exported WAVs are rendered offline from raw buffers + current settings.
+// Mix Studio, WAV export, and all offline rendering below are UNCHANGED —
+// they only ever consumed recState.instBuf/omniBuf/drumBuf/micBuf as plain
+// AudioBuffers, which this new capture path still produces.
 
 // ── Recording state ──────────────────────────────────────────────────────────
 const recState = {
-  // mix recorder (masterOut: inst+drum+comp/limiter, for mix.wav)
-  instMR:       null,
-  instDest:     null,
-  instChunks:   [],
-  instBuf:      null,   // decoded AudioBuffer (= masterOut録音、mix.wav用)
+  instBuf:      null,   // AudioBuffer = mix tap (_recMasterOut), mix.wav用
+  omniBuf:      null,   // AudioBuffer = omni tap (_instBus, コンプ前), omni.wav用
+  drumBuf:      null,   // AudioBuffer = drum tap (_drumBus), drum.wav用
+  micBuf:       null,   // AudioBuffer = vocal tap (mic, 明示的ステレオ複製済み), mic.wav用
 
-  // omni recorder (instBus: pre-comp, omni-only, for omni.wav)
-  omniMR:       null,
-  omniDest:     null,
-  omniChunks:   [],
-  omniBuf:      null,   // decoded AudioBuffer (= instBus録音、コンプ前のomni専用)
-
-  // drum recorder (rhythm track, independent from inst)
-  drumMR:       null,
-  drumDest:     null,
-  drumChunks:   [],
-  drumBuf:      null,   // decoded AudioBuffer
-
-  // mic recorder (active only when mic enabled)
-  micMR:        null,
-  micDest:      null,
-  micChunks:    [],
-  micBuf:       null,   // decoded AudioBuffer
+  _chunks:      Array.from({length: 8}, () => []), // per-channel Float32Array[] while recording
 
   // mic input nodes (live, persistent while mic is connected)
   micStream:    null,   // MediaStream from getUserMedia
@@ -8243,10 +7896,14 @@ async function micConnect() {
   recState.micMonNode.gain.value = recState.micMonitor ? 1.0 : 0.0;
 
   // チェーン: micSource → micGain → micMonNode → destination (monitor only)
-  // 録音タップは micGain の直後から取る（micTapInit 内で接続）
+  // 録音タップは micGain から window._vocalCaptureBus へ並列に fan-out する
+  // （既存のモニター経路は一切変更しない、追加接続のみ）
   recState.micSource.connect(recState.micGain);
   recState.micGain.connect(recState.micMonNode);
   recState.micMonNode.connect(rawCtx.destination);
+  if (window._vocalCaptureBus) {
+    try { recState.micGain.connect(window._vocalCaptureBus); } catch(e){}
+  }
   document.getElementById('mic-led').classList.add('on');
 }
 
@@ -8270,101 +7927,147 @@ function micDisconnect() {
   document.getElementById('mic-led').classList.remove('on');
 }
 
-// ── Instrument tap init ───────────────────────────────────────────────────────
-// ── 録音タップ設計 ────────────────────────────────────────────────────────────
-// 音の接続（instBus/drumBus/recBus → nativeComp → nativeLimiter → masterOut）
-// は変更しない。
+// ── Single-path capture graph: AudioWorklet, 8ch (omni/drum/vocal/mix L/R) ────
+// See header comment above for the full rationale. This function is called
+// once, at the end of ensureAudio(). It is purely additive to the existing
+// live signal path — no existing connection is disturbed, only parallel
+// fan-out taps are added (same pattern the app already used for the old
+// MediaRecorder taps: instBus/drumBus → tap(gain=1.0) → recorder).
 //
-// instMR: masterOut からタップ（limiter通過後の全信号）
-//   → masterOut はすでに ctx.destination に接続済みなので track は確実に live
-//   → fan-out で MediaStreamDestinationNode に追加接続するだけ
-//
-// drumMR: drumBus からタップ（drum のみ）
-//   → drumBus → recBus → ... → masterOut と繋がっているので live になる
-//
-// primer も masterOut に流すことで両 track を確実に live 化する
+// The processor is loaded from a real companion file, `omnitro-capture-
+// worklet.js`, served alongside this HTML — NOT from a Blob URL. Safari has
+// an unreliable implementation of audioWorklet.addModule() with blob: URLs
+// that can throw a bare "SyntaxError" even for syntactically valid module
+// code; loading a real same-origin .js file sidesteps this entirely and is
+// the standard cross-browser-compatible approach.
+const REC_WORKLET_URL = 'omnitro-capture-worklet.js';
 
-function instTapInit() {
-  if (recState.instMR) return true;
-  const rawCtx = Tone.getContext().rawContext;
-  if (!rawCtx || !window._recMasterOut) return false;
+let captureWorklet = null;
+let captureReady   = false;
+let captureInitPromise = null; // guards against concurrent recCaptureInit() calls
+let captureInitError   = null; // human-readable reason for the last failed init attempt
 
-  // mix.wav用: masterOut（inst+drum合算後、コンプ/リミッター通過済み）からステレオタップ
-  recState.instDest = rawCtx.createMediaStreamDestination();
-  const tap = rawCtx.createGain(); tap.gain.value = 1.0;
-  window._recMasterOut.connect(tap);
-  tap.connect(recState.instDest);
+// NOTE: this function is called from two places that can race each other —
+// ensureAudio()'s fire-and-forget call, and recStart()'s own guarded call.
+// Without an in-flight promise guard, both could run the body concurrently,
+// and the second call to audioWorklet.addModule()/registerProcessor() with
+// the same processor name would throw (registerProcessor rejects duplicate
+// names), causing recCaptureInit() to silently fail even though the first
+// (in-flight) call would have succeeded on its own. All callers must await
+// the SAME promise instead of starting a new one.
+function recCaptureInit() {
+  if (captureReady) return Promise.resolve();
+  if (captureInitPromise) return captureInitPromise;
 
-  const mime = pickMime();
-  try {
-    recState.instMR = new MediaRecorder(recState.instDest.stream, mime ? { mimeType: mime } : {});
-    recState.instMR.ondataavailable = e => { if (e.data && e.data.size > 0) recState.instChunks.push(e.data); };
-    return true;
-  } catch(e) { console.error('[REC] inst MR init failed:', e.message); return false; }
-}
+  captureInitPromise = (async () => {
+    try {
+      if (!window._instBus || !window._drumBus || !window._recMasterOut) {
+        captureInitError = 'コアの音声グラフがまだ準備できていません（recCaptureInit was called too early）。';
+        console.warn('[REC] ' + captureInitError);
+        return;
+      }
 
-function omniTapInit() {
-  if (recState.omniMR) return true;
-  const rawCtx = Tone.getContext().rawContext;
-  if (!rawCtx || !window._instBus) return false;
+      // Tone.js v14 internally wraps the native AudioContext with the
+      // `standardized-audio-context` polyfill library. `Tone.getContext()
+      // .rawContext` (and any node's `.context` reference derived from it,
+      // including window._instBus.context) is that polyfill wrapper — NOT
+      // the literal native BaseAudioContext. Ordinary factory methods
+      // (createGain, createChannelMerger, etc.) work fine against it because
+      // the polyfill implements them itself, but the native
+      // `new AudioWorkletNode(ctx, ...)` constructor performs a strict
+      // internal brand check that this wrapper object does not satisfy,
+      // which is what produced the earlier
+      // "parameter 1 is not of type 'BaseAudioContext'" error.
+      //
+      // Fix: use Tone.js's own `addAudioWorkletModule()` / `createAudio
+      // WorkletNode()` methods, which are the polyfill's dedicated entry
+      // points for this exact situation — they operate correctly on the
+      // wrapped context and return a node that interoperates with the rest
+      // of the (also-wrapped) graph, e.g. captureMerger.
+      const toneCtx = Tone.getContext();
+      const rawCtx  = toneCtx.rawContext;
 
-  // omni.wav用: instBus（コンプ前のomniのみ）からステレオタップ
-  recState.omniDest = rawCtx.createMediaStreamDestination();
-  const tap = rawCtx.createGain(); tap.gain.value = 1.0;
-  window._instBus.connect(tap);
-  tap.connect(recState.omniDest);
+      if (!rawCtx.audioWorklet) {
+        captureInitError = 'このブラウザ/コンテキストは AudioWorklet に対応していません（rawCtx.audioWorklet が undefined）。';
+        console.warn('[REC] ' + captureInitError);
+        return;
+      }
 
-  const mime = pickMime();
-  try {
-    recState.omniMR = new MediaRecorder(recState.omniDest.stream, mime ? { mimeType: mime } : {});
-    recState.omniMR.ondataavailable = e => { if (e.data && e.data.size > 0) recState.omniChunks.push(e.data); };
-    return true;
-  } catch(e) { console.warn('[REC] omni MR init failed:', e.message); return false; }
-}
+      try {
+        await toneCtx.addAudioWorkletModule(REC_WORKLET_URL);
+      } catch(e) {
+        captureInitError = 'addAudioWorkletModule(' + REC_WORKLET_URL + ') 失敗: ' + (e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : e);
+        console.error('[REC] ' + captureInitError);
+        return;
+      }
 
-function drumTapInit() {
-  if (recState.drumMR) return true;
-  const rawCtx = Tone.getContext().rawContext;
-  if (!rawCtx || !window._drumBus) return false;
+      // Explicit mono→stereo duplication for every tap (never rely on browser
+      // auto-upmixing — this is what caused the Safari/iOS mono-vocal bug).
+      function dupStereo(sourceNode) {
+        const merger = rawCtx.createChannelMerger(2);
+        sourceNode.connect(merger, 0, 0);
+        sourceNode.connect(merger, 0, 1);
+        return merger;
+      }
 
-  // drum.wav用: drumBus（ドラムのみ、panステレオ情報を保持）からステレオタップ
-  recState.drumDest = rawCtx.createMediaStreamDestination();
-  const tap = rawCtx.createGain(); tap.gain.value = 1.0;
-  window._drumBus.connect(tap);
-  tap.connect(recState.drumDest);
+      const omniTap = rawCtx.createGain(); omniTap.gain.value = 1.0;
+      window._instBus.connect(omniTap);
+      const omniStereo = dupStereo(omniTap);
 
-  const mime = pickMime();
-  try {
-    recState.drumMR = new MediaRecorder(recState.drumDest.stream, mime ? { mimeType: mime } : {});
-    recState.drumMR.ondataavailable = e => { if (e.data && e.data.size > 0) recState.drumChunks.push(e.data); };
-    return true;
-  } catch(e) { console.warn('[REC] drum MR init failed:', e.message); return false; }
-}
+      const drumTap = rawCtx.createGain(); drumTap.gain.value = 1.0;
+      window._drumBus.connect(drumTap);
+      const drumStereo = dupStereo(drumTap);
 
-function pickMime() {
-  const types = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg',''];
-  return types.find(t => !t || MediaRecorder.isTypeSupported(t)) || '';
-}
+      const mixTap = rawCtx.createGain(); mixTap.gain.value = 1.0;
+      window._recMasterOut.connect(mixTap);
+      const mixStereo = dupStereo(mixTap);
 
-function micTapInit() {
-  if (!recState.micEnabled || !recState.micGain) return false;
-  if (recState.micMR) return true;
+      // Vocal tap: always-present bus; micConnect() fans the mic signal into
+      // this in addition to (not instead of) its existing monitor chain.
+      window._vocalCaptureBus = rawCtx.createGain();
+      window._vocalCaptureBus.gain.value = 1.0;
+      const vocalStereo = dupStereo(window._vocalCaptureBus);
 
-  const rawCtx = Tone.getContext().rawContext;
-  recState.micDest = rawCtx.createMediaStreamDestination();
-  // AGC後の信号をタップ（ゲイン調整・コンプ済みの音を録音）
-  recState.micGain.connect(recState.micDest);
+      // 8ch capture merger: 0/1=omni, 2/3=drum, 4/5=vocal, 6/7=mix
+      const captureMerger = rawCtx.createChannelMerger(8);
+      const wireStereo = (stereoMerger, chL, chR) => {
+        const splitter = rawCtx.createChannelSplitter(2);
+        stereoMerger.connect(splitter);
+        splitter.connect(captureMerger, 0, chL);
+        splitter.connect(captureMerger, 1, chR);
+      };
+      wireStereo(omniStereo,  0, 1);
+      wireStereo(drumStereo,  2, 3);
+      wireStereo(vocalStereo, 4, 5);
+      wireStereo(mixStereo,   6, 7);
 
-  const types = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg',''];
-  const mime  = types.find(t => !t || MediaRecorder.isTypeSupported(t)) || '';
-  try {
-    recState.micMR = new MediaRecorder(recState.micDest.stream, mime ? { mimeType: mime } : {});
-    recState.micMR.ondataavailable = e => { if (e.data && e.data.size > 0) recState.micChunks.push(e.data); };
-    return true;
-  } catch(e) {
-    console.warn('[REC] mic MediaRecorder init failed:', e.message);
-    return false;
-  }
+      captureWorklet = toneCtx.createAudioWorkletNode('omnitro-multi-channel-capture', {
+        numberOfInputs: 1,
+        numberOfOutputs: 0,
+        channelCount: 8,
+        channelCountMode: 'explicit',
+        channelInterpretation: 'discrete',
+      });
+      captureMerger.connect(captureWorklet);
+
+      captureWorklet.port.onmessage = (e) => {
+        if (!recState.active) return;
+        const channels = e.data.channels;
+        for (let c = 0; c < 8; c++) recState._chunks[c].push(channels[c]);
+      };
+
+      captureReady = true;
+      captureInitError = null;
+      console.log('[REC] Single-path capture graph ready (8ch AudioWorklet, sampleRate=' + rawCtx.sampleRate + ')');
+    } catch(e) {
+      // Catches anything unguarded above (e.g. node construction/wiring
+      // errors) so a thrown exception here can never silently vanish.
+      captureInitError = (e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : String(e));
+      console.error('[REC] recCaptureInit() unexpected error:', e);
+    }
+  })();
+
+  return captureInitPromise.finally(() => { captureInitPromise = null; });
 }
 
 // ── Recording start/stop ──────────────────────────────────────────────────────
@@ -8372,46 +8075,21 @@ async function recStart() {
   await ensureAudio();
   if (recState.active) return;
 
-  // 全タップを事前初期化してからprimerを流し、一斉にstart
-  if (!instTapInit()) throw new Error('Instrument tap could not be initialised.');
-  omniTapInit();
-  drumTapInit();
-  if (recState.micEnabled && recState.micGain) micTapInit();
+  if (!captureReady) await recCaptureInit();
+  if (!captureReady) {
+    const detail = captureInitError ? ('\n原因: ' + captureInitError) : '';
+    throw new Error('録音エンジン（AudioWorklet）を初期化できませんでした。https:// または http://localhost で開いているか確認してください。' + detail);
+  }
 
-  recState.instChunks = [];
-  recState.omniChunks = [];
-  recState.drumChunks = [];
-  recState.micChunks  = [];
-  recState.instBuf    = null;
-  recState.omniBuf    = null;
-  recState.drumBuf    = null;
-  recState.micBuf     = null;
-  recState.active     = true;
-  recState.elapsed    = 0;
+  recState._chunks = Array.from({length: 8}, () => []);
+  recState.instBuf = null;
+  recState.omniBuf = null;
+  recState.drumBuf = null;
+  recState.micBuf  = null;
+  recState.active  = true;
+  recState.elapsed = 0;
 
-  // Primer: 録音全体を通してinstBus/drumBusに聞こえないレベルの持続音を流し、
-  // MediaRecorder/Opusエンコーダーが「無音」と判断してトリミングするのを防ぐ。
-  // （演奏開始まで完全に無音が続くと、ブラウザ側が録音冒頭を欠落させることがある）
-  const ctx = Tone.getContext().rawContext;
-  const primerInst = ctx.createGain(); primerInst.gain.value = 0.00005; // 実質無音、耳には聞こえないレベル
-  primerInst.connect(window._instBus);
-  const primerDrum = ctx.createGain(); primerDrum.gain.value = 0.00005;
-  primerDrum.connect(window._drumBus);
-  const primerOsc = ctx.createOscillator();
-  primerOsc.frequency.value = 15; // 可聴域外（超低周波）+ 極小ゲインで完全に無音扱い
-  primerOsc.connect(primerInst);
-  primerOsc.connect(primerDrum);
-  primerOsc.start();
-  recState._primerOsc  = primerOsc;
-  recState._primerInst = primerInst;
-  recState._primerDrum = primerDrum;
-  await new Promise(r => setTimeout(r, 120));
-
-  // 全MediaRecorderを一斉にstart（初期化済みなので処理遅延の差がない）
-  if (recState.instMR && recState.instMR.state === 'inactive') recState.instMR.start(200);
-  if (recState.omniMR && recState.omniMR.state === 'inactive') recState.omniMR.start(200);
-  if (recState.drumMR && recState.drumMR.state === 'inactive') recState.drumMR.start(200);
-  if (recState.micMR  && recState.micMR.state  === 'inactive') recState.micMR.start(200);
+  captureWorklet.port.postMessage({ cmd: 'start' });
 
   recSetUI(true);
   recState.timer = setInterval(() => {
@@ -8436,90 +8114,51 @@ function recStop() {
     stopRhythm();
   }
 
-  const instMime = recState.instMR.mimeType || 'audio/webm';
-  const omniMime = recState.omniMR ? (recState.omniMR.mimeType || 'audio/webm') : null;
-  const drumMime = recState.drumMR ? (recState.drumMR.mimeType || 'audio/webm') : null;
-  const micMime  = recState.micMR  ? (recState.micMR.mimeType  || 'audio/webm') : null;
+  captureWorklet.port.postMessage({ cmd: 'stop' });
 
-  // プライマー用の持続音を停止・後始末
-  if (recState._primerOsc) {
-    try { recState._primerOsc.stop(); recState._primerOsc.disconnect(); } catch(e){}
-    recState._primerOsc = null;
-  }
-  if (recState._primerInst) { try { recState._primerInst.disconnect(); } catch(e){} recState._primerInst = null; }
-  if (recState._primerDrum) { try { recState._primerDrum.disconnect(); } catch(e){} recState._primerDrum = null; }
+  // 最後の数ブロック分の postMessage が届くのを少し待ってから組み立てる
+  // （MediaRecorder のような非同期エンコーダは存在しないため、待機はこれだけでよい）
+  setTimeout(() => {
+    const sr = Tone.getContext().rawContext.sampleRate;
 
-  let instDone = false;
-  let omniDone = !recState.omniMR || recState.omniMR.state === 'inactive';
-  let drumDone = !recState.drumMR || recState.drumMR.state === 'inactive';
-  let micDone  = !recState.micMR  || recState.micMR.state  === 'inactive';
-
-  const tryOpenStudio = () => {
-    if (instDone && omniDone && drumDone && micDone) openMixStudio();
-  };
-
-  // mix.wav用: masterOut（inst+drum合算、ステレオそのまま）
-  recState.instMR.onstop = async () => {
-    const blob = new Blob(recState.instChunks, { type: instMime });
-    if (blob.size > 0) {
-      try {
-        const ab = await blob.arrayBuffer();
-        recState.instBuf = await Tone.getContext().rawContext.decodeAudioData(ab);
-      } catch(e) { console.error('[REC] inst decode failed:', e.message); }
-    }
-    instDone = true; tryOpenStudio();
-  };
-
-  // omni.wav用: instBus（コンプ前のomniのみ、ステレオそのまま）
-  if (recState.omniMR && recState.omniMR.state !== 'inactive') {
-    recState.omniMR.onstop = async () => {
-      const blob = new Blob(recState.omniChunks, { type: omniMime });
-      if (blob.size > 0) {
-        try {
-          const ab = await blob.arrayBuffer();
-          recState.omniBuf = await Tone.getContext().rawContext.decodeAudioData(ab);
-        } catch(e) { console.warn('[REC] omni decode failed:', e.message); }
-      }
-      omniDone = true; tryOpenStudio();
+    const concat = (chunks) => {
+      let total = 0;
+      for (const c of chunks) total += c.length;
+      const out = new Float32Array(total);
+      let off = 0;
+      for (const c of chunks) { out.set(c, off); off += c.length; }
+      return out;
     };
-    recState.omniMR.stop();
-  }
-
-  // drum.wav用: drumBus（drumのみ、pan情報を含むステレオそのまま）
-  if (recState.drumMR && recState.drumMR.state !== 'inactive') {
-    recState.drumMR.onstop = async () => {
-      const blob = new Blob(recState.drumChunks, { type: drumMime });
-      if (blob.size > 0) {
-        try {
-          const ab = await blob.arrayBuffer();
-          recState.drumBuf = await Tone.getContext().rawContext.decodeAudioData(ab);
-        } catch(e) { console.warn('[REC] drum decode failed:', e.message); }
-      }
-      drumDone = true; tryOpenStudio();
+    // NOTE: use the global native AudioBuffer constructor here, NOT
+    // Tone.getContext().rawContext.createBuffer(). Tone.js v14 wraps the
+    // native context with the `standardized-audio-context` polyfill, and
+    // that polyfill's createBuffer() returns its own wrapped buffer object
+    // rather than a genuine native AudioBuffer. Feeding a wrapped buffer
+    // into the (fully native) OfflineAudioContext-based export pipeline
+    // below causes an extremely slow compatibility path — this is what
+    // was hanging the page on export. The global AudioBuffer constructor
+    // is unambiguously native and requires no AudioContext at all (the
+    // app already uses this same pattern elsewhere, in subtractBuffers()).
+    const toStereoBuffer = (chL, chR) => {
+      if (!chL || chL.length === 0) return null;
+      const buf = new AudioBuffer({ numberOfChannels: 2, length: chL.length, sampleRate: sr });
+      buf.copyToChannel(chL, 0);
+      buf.copyToChannel(chR, 1);
+      return buf;
     };
-    recState.drumMR.stop();
-  }
 
-  // vocal.wav用: マイク（ステレオそのまま、モノラルマイクの場合はブラウザ側で1chのまま）
-  if (recState.micMR && recState.micMR.state !== 'inactive') {
-    recState.micMR.onstop = async () => {
-      const blob = new Blob(recState.micChunks, { type: micMime });
-      if (blob.size > 0) {
-        try {
-          const ab = await blob.arrayBuffer();
-          recState.micBuf = await Tone.getContext().rawContext.decodeAudioData(ab);
-        } catch(e) { console.warn('[REC] mic decode failed:', e.message); }
-      }
-      micDone = true; tryOpenStudio();
-    };
-    recState.micMR.stop();
-  }
+    const ch = recState._chunks.map(concat);
+    recState.omniBuf = toStereoBuffer(ch[0], ch[1]);
+    recState.drumBuf = toStereoBuffer(ch[2], ch[3]);
+    recState.micBuf  = toStereoBuffer(ch[4], ch[5]);
+    recState.instBuf = toStereoBuffer(ch[6], ch[7]); // "instBuf" = mix tap（既存命名を踏襲）
 
-  recState.instMR.stop();
-  recState.instMR = null;
-  recState.omniMR = null;
-  recState.drumMR = null;
-  recState.micMR  = null;
+    // マイク未接続時、vocalチャンネルは無音バッファになるので既存仕様と同じく null 扱いにする
+    if (!recState.micEnabled) recState.micBuf = null;
+
+    recState._chunks = Array.from({length: 8}, () => []);
+    openMixStudio();
+  }, 150);
 }
 
 // ── WAV encoder (offline render of AudioBuffer to 16-bit WAV) ─────────────────
@@ -8538,10 +8177,19 @@ function encodeWav(audioBuf) {
   view.setUint32(28,sr*bpa,true); view.setUint16(32,bpa,true);
   view.setUint16(34,16,true);
   wr(36,0x64,0x61,0x74,0x61); view.setUint32(40,len*bpa,true);
+
+  // getChannelData() must be called ONCE per channel, not once per sample.
+  // Calling it inside the sample loop (as before) meant up to len*nCh calls
+  // for a multi-minute recording — tens of millions of calls — which is
+  // what was blocking the main thread long enough to trigger the browser's
+  // "Page Unresponsive" warning on export.
+  const channelData = [];
+  for (let c = 0; c < nCh; c++) channelData.push(audioBuf.getChannelData(c));
+
   let off = 44;
   for (let i = 0; i < len; i++) {
     for (let c = 0; c < nCh; c++) {
-      const s = Math.max(-1,Math.min(1, audioBuf.getChannelData(c)[i]));
+      const s = Math.max(-1,Math.min(1, channelData[c][i]));
       view.setInt16(off, s<0 ? s*0x8000 : s*0x7FFF, true);
       off += 2;
     }
@@ -8671,39 +8319,32 @@ function openMixStudio() {
     return;
   }
 
-  // ── ボーカルバッファのラウドネス正規化 ────────────────────────────────────
-  // ピークだけを基準にすると「一瞬の大きな物音」に引っ張られて全体の音量感は
-  // 小さいままになりやすいため、RMS（平均的な音量感）をターゲットにゲインを決め、
-  // ピークは「絶対にこれ以上は超えない」というクリップ防止の上限としてのみ使う。
-  // ※ここはデコード済みAudioBufferの数値を書き換えるだけで、ノード接続は一切変更しない。
+  // ── 方法A: ボーカルバッファのノーマライズ ──────────────────────────────────
+  // ピーク値を測定してターゲットレベル（-3dBFS = 0.708）に正規化。
+  // AGCで圧縮済みの音量をさらに底上げし、かつ絶対に音割れしない。
   if (recState.micBuf) {
-    let sumSq = 0, sampleCount = 0, peak = 0;
+    const TARGET_PEAK = 0.708; // -3dBFS
+    let peak = 0;
     for (let ch = 0; ch < recState.micBuf.numberOfChannels; ch++) {
       const data = recState.micBuf.getChannelData(ch);
       for (let i = 0; i < data.length; i++) {
-        const v = data[i];
-        sumSq += v * v;
-        sampleCount++;
-        const abs = Math.abs(v);
+        const abs = Math.abs(data[i]);
         if (abs > peak) peak = abs;
       }
     }
-    const rms = sampleCount > 0 ? Math.sqrt(sumSq / sampleCount) : 0;
-
-    if (rms > 0.0004 && peak > 0.0004) {
-      const TARGET_RMS = 0.16;  // 約-16dBFS RMS。会話〜歌声として十分聞き取りやすい音量感
-      const PEAK_CEIL  = 0.92;  // これ以上のピークには絶対にしない（クリップ防止）
-      const MAX_BOOST  = 16.0;  // 最大+24dB程度までのブースト（無音部のノイズを持ち上げすぎない上限）
-
-      const rmsGain  = TARGET_RMS / rms;
-      const peakGain = PEAK_CEIL / peak;
-      const gain = Math.max(0.05, Math.min(rmsGain, peakGain, MAX_BOOST));
-
-      if (Math.abs(gain - 1.0) > 0.01) {
-        for (let ch = 0; ch < recState.micBuf.numberOfChannels; ch++) {
-          const data = recState.micBuf.getChannelData(ch);
-          for (let i = 0; i < data.length; i++) data[i] *= gain;
-        }
+    if (peak > 0.001 && peak < TARGET_PEAK) {
+      // ピークが低い（小さい声）→ 正規化で底上げ
+      const gain = Math.min(TARGET_PEAK / peak, 8.0); // 最大8倍（+18dB）まで
+      for (let ch = 0; ch < recState.micBuf.numberOfChannels; ch++) {
+        const data = recState.micBuf.getChannelData(ch);
+        for (let i = 0; i < data.length; i++) data[i] *= gain;
+      }
+    } else if (peak >= TARGET_PEAK) {
+      // ピークが高すぎる→ -3dBFSに収める（音割れ防止）
+      const gain = TARGET_PEAK / peak;
+      for (let ch = 0; ch < recState.micBuf.numberOfChannels; ch++) {
+        const data = recState.micBuf.getChannelData(ch);
+        for (let i = 0; i < data.length; i++) data[i] *= gain;
       }
     }
   }
@@ -8714,23 +8355,31 @@ function openMixStudio() {
   const hasMic  = !!recState.micBuf;
   const hasDrum = !!recState.drumBuf;
 
-  // Vocal列の表示制御
-  document.querySelectorAll('.vocal-col').forEach(el => { el.style.display = hasMic ? '' : 'none'; });
+  // OMNI/DRUM/MIC の3列は常に均等なグリッドで表示したまま、未収録のチャンネルは
+  // グレーアウト＋操作不可にする（display:none で消すと列幅が可変になり、
+  // 有効時にスライダーが枠からはみ出す原因になっていたため）。
+  function setColState(selector, enabled) {
+    document.querySelectorAll(selector).forEach(el => {
+      el.classList.toggle('ch-col-disabled', !enabled);
+      el.querySelectorAll('input').forEach(inp => { inp.disabled = !enabled; });
+    });
+  }
+  setColState('.vocal-col', hasMic);
+  setColState('.drum-col',  hasDrum);
+
   const vocalEqSection = document.getElementById('vocal-eq-section');
-  if (vocalEqSection) vocalEqSection.style.display = hasMic ? '' : 'none';
+  if (vocalEqSection) {
+    vocalEqSection.classList.toggle('ch-col-disabled', !hasMic);
+    vocalEqSection.querySelectorAll('input').forEach(inp => { inp.disabled = !hasMic; });
+  }
 
-  // Drum列の表示制御
-  const drumColLabel = document.getElementById('drum-col-label');
-  const drumLevelRow = document.getElementById('drum-level-row');
-  if (drumColLabel) drumColLabel.style.display = hasDrum ? '' : 'none';
-  if (drumLevelRow) drumLevelRow.style.display = hasDrum ? '' : 'none';
-
-  // Export checkbox defaults
+  // Export checkbox defaults（未収録チャンネルはチェックボックス自体も無効化）
   document.getElementById('chk-mix').checked   = true;
-  document.getElementById('chk-vocal').checked = hasMic;
+  document.getElementById('chk-vocal').checked  = hasMic;
+  document.getElementById('chk-vocal').disabled = !hasMic;
   document.getElementById('chk-music').checked = false;
   const chkDrum = document.getElementById('chk-drum');
-  if (chkDrum) chkDrum.checked = hasDrum;
+  if (chkDrum) { chkDrum.checked = hasDrum; chkDrum.disabled = !hasDrum; }
 
   // Memory info
   const instMb = recState.instBuf ? (recState.instBuf.length * recState.instBuf.numberOfChannels * 4 / 1048576).toFixed(1) : 0;
@@ -8760,14 +8409,11 @@ function closeMixStudio() {
 
 function discardRecording() {
   closeMixStudio();
-  recState.instBuf    = null;
-  recState.omniBuf    = null;
-  recState.drumBuf    = null;
-  recState.micBuf     = null;
-  recState.instChunks = [];
-  recState.omniChunks = [];
-  recState.drumChunks = [];
-  recState.micChunks  = [];
+  recState.instBuf = null;
+  recState.omniBuf = null;
+  recState.drumBuf = null;
+  recState.micBuf  = null;
+  recState._chunks = Array.from({length: 8}, () => []);
 }
 
 // ── テープエフェクト ──────────────────────────────────────────────────────────
@@ -9581,9 +9227,9 @@ async function studioExport() {
       await new Promise(r => setTimeout(r, 300));
     }
 
-    // vocal.wav = micBuf
+    // mic.wav = micBuf
     if (doVocal && vocalR) {
-      dlBlob(encodeWav(vocalR), 'omnitro-vocal-'+ts+'.wav');
+      dlBlob(encodeWav(vocalR), 'omnitro-mic-'+ts+'.wav');
       await new Promise(r => setTimeout(r, 300));
     }
 
@@ -9902,27 +9548,7 @@ function randomizeKitParams() {
   const rnd = (min, max) => Math.round(min + Math.random() * (max - min));
   const rndF = (min, max) => parseFloat((min + Math.random() * (max - min)).toFixed(1));
 
-  // ── PAN分散: パーカッション系7chが偶然同じ側に固まらないよう、
-  //    「左端〜中央〜右端」に均等配置したスロットをシャッフルして各chへ割り当てる。
-  //    チャンネルごとの最大振れ幅(maxPan)は従来のrnd(-X,X)相当を維持しつつ、
-  //    毎回きれいに左右へ散らばった結果になる。
-  const shuffle = arr => {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  };
-  const panSlots = shuffle([-1.0, -0.66, -0.33, 0, 0.33, 0.66, 1.0]); // 7スロット
-  let panIdx = 0;
-  const nextPan = (maxPan) => {
-    const slot = panSlots[panIdx++ % panSlots.length];
-    const jitter = (Math.random() * 2 - 1) * (maxPan * 0.12); // わずかな揺らぎで機械的にならないように
-    return Math.round(Math.max(-100, Math.min(100, slot * maxPan + jitter)));
-  };
-
-  // KICK: 深いサブキックから明るいタイトキックまで（低域はセンター固定が定石）
+  // KICK: 深いサブキックから明るいタイトキックまで
   kitEditParams.kick = {
     level: rnd(80,120), tune: rnd(-8,4), pan: 0,
     attack: rnd(0,5), decay: rnd(120,400), transient: rnd(40,90),
@@ -9930,7 +9556,7 @@ function randomizeKitParams() {
     drive: rnd(5,40), room: rnd(0,20), pitch_env: rnd(-16,-2),
     clap_spread:7, clap_tail:30, clap_peaks:3,
   };
-  // SNARE: スナッピーからクラップ感まで（センター寄りを維持）
+  // SNARE: スナッピーからクラップ感まで
   kitEditParams.snare = {
     level: rnd(80,115), tune: rnd(-6,6), pan: rnd(-10,10),
     attack: rnd(0,3), decay: rnd(80,280), transient: rnd(50,95),
@@ -9940,7 +9566,7 @@ function randomizeKitParams() {
   };
   // HI-HAT(CL): タイトメタルから曇りまで
   kitEditParams.hat = {
-    level: rnd(60,100), tune: rnd(-8,8), pan: nextPan(20),
+    level: rnd(60,100), tune: rnd(-8,8), pan: rnd(-20,20),
     attack: 0, decay: rnd(30,120), transient: rnd(20,60),
     lpf: rnd(6000,18000), lpfQ: rnd(1,10), hpf: rnd(1000,5000),
     drive: rnd(0,15), room: 0, pitch_env: 0,
@@ -9948,7 +9574,7 @@ function randomizeKitParams() {
   };
   // HI-HAT(OP): 少し長め
   kitEditParams.hiop = {
-    level: rnd(55,95), tune: rnd(-6,6), pan: nextPan(25),
+    level: rnd(55,95), tune: rnd(-6,6), pan: rnd(-25,25),
     attack: 0, decay: rnd(120,400), transient: rnd(15,50),
     lpf: rnd(5000,16000), lpfQ: rnd(1,8), hpf: rnd(800,3000),
     drive: rnd(0,10), room: rnd(0,12), pitch_env: 0,
@@ -9956,7 +9582,7 @@ function randomizeKitParams() {
   };
   // RIM
   kitEditParams.rim = {
-    level: rnd(55,90), tune: rnd(-4,8), pan: nextPan(32),
+    level: rnd(55,90), tune: rnd(-4,8), pan: rnd(-15,15),
     attack: 0, decay: rnd(50,160), transient: rnd(60,95),
     lpf: rnd(4000,12000), lpfQ: rnd(5,20), hpf: rnd(200,800),
     drive: rnd(0,20), room: rnd(0,10), pitch_env: 0,
@@ -9964,7 +9590,7 @@ function randomizeKitParams() {
   };
   // COWBELL
   kitEditParams.cowbl = {
-    level: rnd(25,55), tune: rnd(-6,6), pan: nextPan(38),
+    level: rnd(25,55), tune: rnd(-6,6), pan: rnd(-20,20),
     attack: 0, decay: rnd(100,350), transient: rnd(70,100),
     lpf: rnd(3000,9000), lpfQ: rnd(8,25), hpf: rnd(300,700),
     drive: rnd(10,45), room: 0, pitch_env: 0,
@@ -9973,7 +9599,7 @@ function randomizeKitParams() {
   // CLAP: ナチュラルからエレクトロまで
   const clapStyle = Math.random() < 0.5 ? 'natural' : 'electro';
   kitEditParams.clap = {
-    level: rnd(75,110), tune: rnd(-3,3), pan: nextPan(8),
+    level: rnd(75,110), tune: rnd(-3,3), pan: rnd(-8,8),
     attack: 0, decay: rnd(120,250), transient: rnd(30,70),
     lpf: clapStyle==='natural' ? rnd(1800,3500) : rnd(3000,8000),
     lpfQ: clapStyle==='natural' ? rnd(20,40) : rnd(5,20),
@@ -9983,14 +9609,14 @@ function randomizeKitParams() {
   };
   // TAMB: タンバリン — 金属感の強さ・明るさ・長さをランダムに
   kitEditParams.tamb = {
-    level: rnd(50,90), tune: rnd(-6,6), pan: nextPan(32),
+    level: rnd(50,90), tune: rnd(-6,6), pan: rnd(-15,15),
     attack: 0, decay: rnd(150,380), transient: rnd(35,70),
     lpf: rnd(7000,14000), lpfQ: rnd(3,14), hpf: rnd(400,1200),
     drive: rnd(0,25), room: rnd(5,20), pitch_env: 0,
     clap_spread:7, clap_tail:30, clap_peaks:3,
   };
   kitEditParams.shkr = {
-    level: rnd(45,85), tune: rnd(-4,4), pan: nextPan(32),
+    level: rnd(45,85), tune: rnd(-4,4), pan: rnd(-15,15),
     attack: 0, decay: rnd(100,350), transient: rnd(30,65),
     lpf: rnd(8000,16000), lpfQ: rnd(3,12), hpf: rnd(500,1500),
     drive: rnd(0,20), room: rnd(3,15), pitch_env: 0,
@@ -10294,33 +9920,24 @@ function setupInstantOff() {
   });
 }
 
-// ─── WEB MIDI API — MIDIキーボード演奏 ─────────────────────────────────────────
+// ─── WEB MIDI API — ストラムプレート演奏 ──────────────────────────────────────
 //
-// 2つのモードを持つ（state.midiStrumModeで切替、SETTINGSの「MIDI STRUM MODE」トグル）:
+// 設計:
+//   MIDIノート番号 → ストラムプレートの position(0〜1) に変換
+//   position は getArpeggioNotes() に渡すので、現在のコードに従った音が出る
 //
-//   ① NORMAL（既定）: 普通のMIDIキーボードとして半音階（クロマチック）でそのまま鳴らす。
-//      MIDIノート番号 → Tone.Frequency(note, 'midi').toNote() で直接ピッチに変換。
+//   有効範囲: MIDI 36(C2) 〜 95(B6) = 60鍵相当
+//   position = clamp((noteNumber - MIDI_LOW) / (MIDI_HIGH - MIDI_LOW), 0, 1)
 //
-//   ② STRUM: MIDIノート番号をストラムプレート上の position(0〜1) に変換し、
-//      getArpeggioNotes() で現在選択中のコードの音配列に強制的にマッピングする。
-//      つまり鍵盤のどこを弾いても「今押しているコードの構成音」しか出ない、
-//      ストラムプレートをMIDIキーボードで弾いているのと同じ状態になる。
-//
-//      有効範囲: MIDI 36(C2) 〜 60(C4) = 25鍵（2オクターブ）相当
-//      ストラムプレートは4オクターブ分の配列でも実際は13音（buildOmnicordStrumList：
-//      3音×4グループ＋ターミナル音1つ）しか鳴らないため、25鍵MIDIキーボード1台分の
-//      2オクターブに13音を収めることで、鍵盤の端から端まで使い切れるようにしている。
-//      position = clamp((noteNumber - MIDI_LOW) / (MIDI_HIGH - MIDI_LOW), 0, 1)
-//      低い鍵盤 → ストラムプレート低音側、高い鍵盤 → 高音側。
-//      ※お使いのMIDIキーボードの最低鍵がMIDIノート36(C2)前後に来るよう、
-//        キーボード本体のオクターブシフト機能で合わせてください。
+//   低い鍵盤 → ストラムプレート低音側、高い鍵盤 → 高音側。
+//   オクターブを上げれば自然に高い音が出る。音源変更不要。
 //
 //   同時押し: ストラムプレートと同様、最大3音同時（_activeVoices は無制限）
 //   ベロシティ: MIDI 0〜127 → strum velocity 0.35〜0.85 にマッピング
 //   Note Off: triggerAttackRelease は自然減衰なので処理不要
 
 const MIDI_LOW  = 36;  // C2
-const MIDI_HIGH = 60;  // C4（MIDI_LOWから2オクターブ＝25鍵）
+const MIDI_HIGH = 95;  // B6
 
 // 現在MIDIで発音中のノートを追跡（Note Off / Instant Off 用）
 const midiHeldNotes = new Map(); // noteNumber → noteName (e.g. "C4")
@@ -10337,21 +9954,8 @@ function onMidiNoteOn(noteNumber, velocity) {
   if (velocity === 0) { onMidiNoteOff(noteNumber); return; }
 
   ensureAudio().then(() => {
-    let noteName;
-
-    if (state.midiStrumMode) {
-      // ── STRUM MODE: ストラムプレートの音配列に強制マッピング ──────────────
-      // 現在選択中のコードが無い場合は音を出さない（ストラムプレート本体と同じ挙動）。
-      if (!state.selectedRoot) return;
-      const pos = midiNoteToStrumPosition(noteNumber);
-      noteName = getArpeggioNotes(state.selectedRoot, state.selectedType, pos);
-      if (!noteName) return;
-    } else {
-      // ── NORMAL MODE: 通常のMIDIキーボードと同じ半音階 ─────────────────────
-      noteName = Tone.Frequency(noteNumber, 'midi').toNote();
-    }
-
-    const vel = midiVelocityToStrumVelocity(velocity);
+    const noteName = Tone.Frequency(noteNumber, 'midi').toNote();
+    const vel      = midiVelocityToStrumVelocity(velocity);
 
     // ストラムプレートと完全に同じ発音経路
     if (strumSynth) strumSynth.triggerAttackRelease(noteName, vel);
@@ -10398,406 +10002,6 @@ async function setupMidi() {
   }
 }
 
-// ─── MANUAL / 取扱説明書 ──────────────────────────────────────────────────────
-// 日本語・英語を切り替えられる取扱説明書。SETTINGS画面の「MANUAL」ボタンから開く。
-// 内容はセクションごとに ja/en を持つ配列。最後のセクションはアプリの技術仕様。
-
-const MANUAL_SECTIONS = [
-  {
-    titleJa: 'はじめに', titleEn: 'Overview',
-    bodyJa: `
-      <p><b>omnitro（オムニトロ）</b>は、コードボタンとストラムプレートで演奏する、レトロな電子コード楽器の
-      操作感を意識したブラウザ演奏アプリです。左側のコードボタンで和音を選び、
-      右側（または下側）のストラムプレートを指でなぞることで、独特の"シャラン"という
-      きらめくアルペジオ・サウンドを演奏できます。</p>
-      <p>コード演奏・ストラムプレート・リズムマシン・録音（MIX STUDIO）・マイク入力・PCキーボード演奏・
-      MIDIキーボード演奏まで、ひとつの演奏体験として1つのアプリにまとめています。</p>
-      <p>この説明書はSETTINGS画面右上の「MANUAL」ボタンからいつでも開けます。</p>`,
-    bodyEn: `
-      <p><b>omnitro</b> is a browser-based playing app inspired by the feel of vintage
-      button-chord / strumplate electronic instruments. Pick a chord with the buttons
-      on the left, then run your finger across the strumplate on the right (or bottom) to play
-      that signature shimmering, cascading arpeggio sound.</p>
-      <p>Chord play, the strumplate, a built-in rhythm machine, recording (Mix Studio), microphone
-      input, PC-keyboard play and MIDI-keyboard play are all combined into a single instrument.</p>
-      <p>You can open this manual any time from the "MANUAL" button on the SETTINGS screen.</p>`,
-  },
-  {
-    titleJa: 'コード演奏（SIMPLEモード）', titleEn: 'Chord Play (Simple Mode)',
-    bodyJa: `
-      <p>画面左側には12個のルート音（五度圏順：D♭ A♭ E♭ B♭ F C G D A E B F♯）× 3種類
-      （<b>MAJ</b> / <b>MIN</b> / <b>7</b>）のボタンが並んでいます。1つ押すだけでメジャー／マイナー／
-      セブンスコードが鳴ります。</p>
-      <h3>同時押しで複雑なコードに</h3>
-      <ul>
-        <li>MAJ + 7 → <b>MAJ7</b></li>
-        <li>MIN + 7 → <b>MIN7</b></li>
-        <li>MAJ + MIN → <b>DIM</b>（ディミニッシュ）</li>
-        <li>MAJ + MIN + 7 → <b>AUG</b>（オーギュメント）</li>
-        <li>MAJ(ルートN) + 7(1つ左隣のルート) → <b>SUS4</b></li>
-        <li>MAJ(ルートN) + MIN(1つ左隣のルート) → <b>ADD9</b></li>
-      </ul>
-      <p>選んだコード名は、ストラムプレート上の「chord display」に表示されます。</p>
-      <h3>CHORD HOLD / CHORD AUTO（設定パネル内）</h3>
-      <p><b>CHORD HOLD</b>をONにすると、指を離してもコードボタンが点灯したまま次のストラムに備えます
-      （実機のホールド機能に相当）。<b>CHORD MANUAL / AUTO</b>をONにすると、ボタンを押した瞬間に
-      コード自体も鳴ります（OFFの場合はストラムプレートに触れたときだけ音が出ます）。</p>
-      <h3>INSTANT OFF</h3>
-      <p>ストラムプレート上部の赤い「■ OFF」ボタンを押すと、鳴っている全ての音を即座に止め、
-      押しているコードもリセットします。演奏を素早く仕切り直したいときに使います。</p>`,
-    bodyEn: `
-      <p>On the left side are 12 root buttons (circle-of-fifths order: D♭ A♭ E♭ B♭ F C G D A E B F♯),
-      each with 3 chord-type columns: <b>MAJ</b> / <b>MIN</b> / <b>7</b>. Press one to play a major,
-      minor, or seventh chord.</p>
-      <h3>Press multiple buttons together for complex chords</h3>
-      <ul>
-        <li>MAJ + 7 → <b>MAJ7</b></li>
-        <li>MIN + 7 → <b>MIN7</b></li>
-        <li>MAJ + MIN → <b>DIM</b> (diminished)</li>
-        <li>MAJ + MIN + 7 → <b>AUG</b> (augmented)</li>
-        <li>MAJ (root N) + 7 (one step to the left) → <b>SUS4</b></li>
-        <li>MAJ (root N) + MIN (one step to the left) → <b>ADD9</b></li>
-      </ul>
-      <p>The resolved chord name appears in the "chord display" above the strumplate.</p>
-      <h3>CHORD HOLD / CHORD AUTO (in Settings)</h3>
-      <p>With <b>CHORD HOLD</b> on, the chord buttons stay lit after you release your fingers so the
-      chord is ready for your next strum (just like the hold feature on the original hardware).
-      With <b>CHORD MANUAL / AUTO</b> on, the chord itself sounds the instant you press the button
-      (when off, sound only comes from touching the strumplate).</p>
-      <h3>INSTANT OFF</h3>
-      <p>The red "■ OFF" pad above the strumplate instantly silences everything currently sounding
-      and clears the held chord — handy for a quick reset between takes.</p>`,
-  },
-  {
-    titleJa: 'ストラムプレート', titleEn: 'The Strumplate',
-    bodyJa: `
-      <p>選んだコードの構成音は、単純な音階順ではなく、独自の配列ロジックでストラムプレート上に
-      並んでいます。</p>
-      <ul>
-        <li><b>タップ</b>：軽く触れるとその位置の音が1つ鳴ります。</li>
-        <li><b>スライド（ストラム）</b>：指でなぞると、通過した位置の音が次々に鳴り、
-          "シャラララ"というアルペジオになります。</li>
-        <li><b>マルチタッチ</b>：最大3本指まで同時に認識し、指ごとに色分けされたインジケーターが
-          表示されます。和音を厚く鳴らしたいときに複数指でなぞってみてください。</li>
-      </ul>
-      <p>ストラムプレートは縦方向（上＝高い音、下＝低い音）に配置されています。</p>`,
-    bodyEn: `
-      <p>The notes of the selected chord are laid out on the strumplate using a distinctive
-      ordering logic — not a simple ascending scale.</p>
-      <ul>
-        <li><b>Tap</b>: a light touch plays a single note at that position.</li>
-        <li><b>Slide (strum)</b>: dragging your finger triggers each note it passes over in
-          sequence, producing that cascading arpeggio shimmer.</li>
-        <li><b>Multi-touch</b>: up to 3 fingers are tracked at once, each with its own colored
-          indicator — try strumming with more than one finger for a fuller sound.</li>
-      </ul>
-      <p>The strumplate runs vertically (top = high notes, bottom = low notes).</p>`,
-  },
-  {
-    titleJa: 'キーボード演奏 / MIDI', titleEn: 'Keyboard Play / MIDI',
-    bodyJa: `
-      <p>PCキーボードでもコードボタンを演奏できます（複数キー同時押し対応）。</p>
-      <table class="manual-spec-table">
-        <tr><td>MAJ列</td><td><span class="manual-kbd">A S D F G H J K L ; : ]</span></td></tr>
-        <tr><td>MIN列</td><td><span class="manual-kbd">Q W E R T Y U I O P @ [</span></td></tr>
-        <tr><td>7列</td><td><span class="manual-kbd">1 2 3 4 5 6 7 8 9 0 - ^</span></td></tr>
-      </table>
-      <p>各列は五度圏順の12ルートに左から順に対応しています。</p>
-      <h3>MIDIキーボード</h3>
-      <p>USB/BluetoothのMIDIキーボードを接続すると、自動的に認識され演奏に使えます。
-      既定（<b>NORMAL</b>）では、ごく普通のMIDIキーボードとして半音階（ドレミファソラシド）で
-      鳴ります。コードの選択状態には連動しません。</p>
-      <p>⚠️ <b>Safari（iPhone・iPad・Macのすべて）はWeb MIDI APIに対応していません。</b>
-      AppleがWebKitの仕様として非対応にしているため、iPhone/iPadでは他のブラウザ
-      （Chrome・Firefox等）を使っても中身はSafariと同じエンジンなので、MIDIキーボードは
-      認識されません。MIDIキーボードを使いたい場合は、Windows／macOS／Android上の
-      Chrome・Edge・Firefoxなどをご利用ください。</p>
-      <h3>MIDI STRUM MODE（設定パネル）</h3>
-      <p>SETTINGS →「REAL TIME CONTROL」の<b>MIDI STRUM MODE</b>をONにすると、鍵盤の演奏音が
-      <b>今選んでいるコードの構成音だけ</b>に強制的にマッピングされます。鍵盤の位置
-      （MIDIノート36〜60＝C2〜C4、ちょうど2オクターブ＝25鍵分）がそのままストラムプレートの
-      低音〜高音の位置に対応し、鍵盤を弾くことがストラムプレートを指でなぞるのと同じ動作になります。
-      ストラムプレートの13音（4オクターブ分に配置されていますが実際に鳴るのは13音）を
-      25鍵の範囲にきれいに収めているので、25鍵タイプのMIDIキーボードでも端から端まで
-      すべての音に届きます。お使いのキーボードの最低鍵がMIDIノート36（C2）付近に来るよう、
-      キーボード本体のオクターブシフトボタンで合わせてください。つまり、
-      マウスやPCキーボードでコードボタンを押してコードを選んでおけば、鍵盤のどこを弾いても
-      そのコードから外れた音は出ません。コードが選択されていない間は音が出ないので、
-      先にコードを選んでから演奏してください。</p>`,
-    bodyEn: `
-      <p>Chord buttons can also be played from a PC keyboard (multiple keys at once are supported).</p>
-      <table class="manual-spec-table">
-        <tr><td>MAJ row</td><td><span class="manual-kbd">A S D F G H J K L ; : ]</span></td></tr>
-        <tr><td>MIN row</td><td><span class="manual-kbd">Q W E R T Y U I O P @ [</span></td></tr>
-        <tr><td>7 row</td><td><span class="manual-kbd">1 2 3 4 5 6 7 8 9 0 - ^</span></td></tr>
-      </table>
-      <p>Each row maps left-to-right to the 12 circle-of-fifths roots.</p>
-      <h3>MIDI keyboard</h3>
-      <p>A connected USB/Bluetooth MIDI keyboard is detected automatically and ready to play.
-      By default (<b>NORMAL</b>), it behaves like an ordinary MIDI keyboard, playing a plain
-      chromatic scale — it is not tied to whatever chord is currently selected.</p>
-      <p>⚠️ <b>Safari (on iPhone, iPad, and Mac alike) does not support the Web MIDI API.</b>
-      Apple leaves it out of WebKit entirely, and since every browser on iOS/iPadOS — including
-      Chrome and Firefox — is required to use WebKit under the hood, a MIDI keyboard won't be
-      recognized on iPhone or iPad no matter which browser app you use. To play with a MIDI
-      keyboard, use Chrome, Edge, or Firefox on Windows, macOS, or Android instead.</p>
-      <h3>MIDI STRUM MODE (in Settings)</h3>
-      <p>Turn on <b>MIDI STRUM MODE</b> under Settings → "REAL TIME CONTROL" to force every note
-      you play to be a note <b>from the currently selected chord only</b>. Key position (MIDI
-      notes 36–60 / C2–C4, exactly 2 octaves = 25 keys) maps directly onto the strumplate's
-      low-to-high range, so playing the keyboard becomes equivalent to running your finger across
-      the strumplate. The strumplate's 13 notes (laid out across a 4-octave span, though only 13
-      notes actually sound) fit neatly into that 25-key range, so a 25-key MIDI controller can
-      reach every note from end to end. Use your keyboard's octave-shift buttons so its lowest key
-      sits around MIDI note 36 (C2). In other words,
-      once you've picked a chord with the mouse or PC keyboard, nothing outside that chord can
-      come out of the MIDI keyboard. No sound is produced while no chord is selected, so pick a
-      chord first.</p>`,
-  },
-  {
-    titleJa: 'ボイス（音色）', titleEn: 'Voices',
-    bodyJa: `
-      <p>SETTINGSの「VOICE SELECT」から、ストラムプレート（と保持コード）の音色を10種類の中から
-      選べます。</p>
-      <ul>
-        <li><b>OMNI 1 / OMNI 2</b> — このアプリの基本となる、温かみのあるオリジナルボイス</li>
-        <li><b>HARP</b> — トライアングル波系の柔らかいハープ音</li>
-        <li><b>CHEAP</b> — チープなおもちゃ楽器風の音色</li>
-        <li><b>SYNTH</b> — のこぎり波ベースのシンセリード</li>
-        <li><b>FLUTE</b> — サイン波中心の柔らかいフルート音</li>
-        <li><b>GUITAR</b> — オクターブユニゾンを重ねたギター風</li>
-        <li><b>FM PIANO</b> — 金属的な倍音とトレモロ感のあるFMエレピ</li>
-        <li><b>ORGAN</b> — コーラスをかけたオルガン（レスリー風）</li>
-        <li><b>VIBES</b> — 減衰の長いビブラフォン風</li>
-      </ul>`,
-    bodyEn: `
-      <p>Choose from 10 voices for the strumplate (and held chords) under "VOICE SELECT" in
-      Settings.</p>
-      <ul>
-        <li><b>OMNI 1 / OMNI 2</b> — the app's core, warm original voices</li>
-        <li><b>HARP</b> — a soft, triangle-wave based harp tone</li>
-        <li><b>CHEAP</b> — a deliberately cheap, toy-instrument style tone</li>
-        <li><b>SYNTH</b> — a sawtooth-based synth lead</li>
-        <li><b>FLUTE</b> — a gentle, sine-wave-centered flute</li>
-        <li><b>GUITAR</b> — guitar-like tone with an octave-unison layer</li>
-        <li><b>FM PIANO</b> — a metallic, FM-style electric piano with a tremolo shimmer</li>
-        <li><b>ORGAN</b> — an organ with chorus (Leslie-style) movement</li>
-        <li><b>VIBES</b> — a vibraphone-like tone with a long, ringing decay</li>
-      </ul>`,
-  },
-  {
-    titleJa: 'リズム', titleEn: 'Rhythm',
-    bodyJa: `
-      <p>ヘッダー右上の<b>RHYTHM</b>ボタンでリズムパターンの再生・停止ができます。SETTINGSの
-      「RHYTHM」グループでは、パターン選択・ドラムキット選択・テンポ・ボリュームを調整できます。
-      全58種類のリズムパターン（LO-FI、JAZZ、HIP-HOP、WORLD、GROOVE、AMBIENTなど）と、
-      9種類のドラムキット（808 / 909 / LM-1 / LOFI / TAPE / JAZZ / VINYL / MINIMAL / ACOUSTIC）
-      から自由に組み合わせられます。</p>`,
-    bodyEn: `
-      <p>Use the <b>RHYTHM</b> button in the header to start/stop the rhythm pattern. In the
-      "RHYTHM" section of Settings you can choose the pattern, drum kit, tempo and volume.
-      There are 58 built-in patterns in all (LO-FI, JAZZ, HIP-HOP, WORLD, GROOVE, AMBIENT and more),
-      freely combinable with 9 drum kits (808 / 909 / LM-1 / LOFI / TAPE / JAZZ / VINYL / MINIMAL /
-      ACOUSTIC).</p>`,
-  },
-  {
-    titleJa: 'RHYTHM EDITOR（リズムエディター）', titleEn: 'Rhythm Editor',
-    bodyJa: `
-      <p>SETTINGS →「RHYTHM」→「▶ PATTERN」で開きます。ピアノロール画面で各ドラムパートの
-      タイミング・ベロシティ・確率・オフセットを細かく編集できます。</p>
-      <ul>
-        <li><b>タップ</b>（空きスペース）でノートを追加、既存ノートをタップで選択</li>
-        <li><b>ドラッグ</b>で横方向にタイミング（マイクロオフセット）、縦方向にベロシティを調整</li>
-        <li><b>ダブルタップ</b>でノートを削除</li>
-        <li><b>長押し</b>でVEL（ベロシティ）/ OFFSET（ms）/ PROB（発音確率）/ GHOST（ゴースト音）
-          を細かく設定するポップアップを表示</li>
-        <li><b>QUANTIZE</b>（100% / 50% / 25% / OFF）と<b>APPLY Q</b>で全ノートを整列</li>
-        <li><b>HUMANIZE</b>でタイミングとベロシティにランダムな揺らぎを加え、人間らしいグルーヴに</li>
-        <li><b>★ RANDOM</b>でパターン全体をランダム生成</li>
-        <li>名前を付けて保存、パターン一覧から読込、JSONでの書き出し／読み込みにも対応</li>
-      </ul>`,
-    bodyEn: `
-      <p>Open it from Settings → "RHYTHM" → "▶ PATTERN". The piano-roll screen lets you edit each
-      drum part's timing, velocity, probability and micro-offset in detail.</p>
-      <ul>
-        <li><b>Tap</b> empty space to add a note; tap an existing note to select it</li>
-        <li><b>Drag</b> horizontally for micro-timing offset, vertically for velocity</li>
-        <li><b>Double-tap</b> a note to delete it</li>
-        <li><b>Long-press</b> a note to open a popup with fine control over VEL (velocity),
-          OFFSET (ms), PROB (probability) and GHOST (ghost note)</li>
-        <li><b>QUANTIZE</b> (100% / 50% / 25% / OFF) plus <b>APPLY Q</b> snaps all notes to the grid</li>
-        <li><b>HUMANIZE</b> adds natural random timing/velocity variation for a human feel</li>
-        <li><b>★ RANDOM</b> generates an entirely new pattern</li>
-        <li>Patterns can be named and saved, reloaded from the list, and exported/imported as JSON</li>
-      </ul>`,
-  },
-  {
-    titleJa: 'KIT EDITOR（ドラムキットエディター）', titleEn: 'Kit Editor',
-    bodyJa: `
-      <p>SETTINGS →「RHYTHM」→「▶ KIT EDIT」で開きます。KICK / SNARE / HI-CL / HI-OP / RIM /
-      COWBL / CLAP / TAMB / SHKR の9チャンネルごとに、LEVEL・TUNE・PAN・ATTACK・DECAY・
-      TRANSIENT・LPF/HPF・DRIVE・ROOMなど詳細なパラメータを調整できます。各チャンネルの
-      「▶ TEST」ボタンで単発試聴が可能です。</p>
-      <p><b>★ RANDOM</b>でキット全体をランダム生成（PANは全チャンネルが偶然同じ側に偏らないよう、
-      左右にバランスよく分散するよう工夫されています）。名前を付けて保存、JSON書き出し／
-      読み込みにも対応しています。</p>`,
-    bodyEn: `
-      <p>Open it from Settings → "RHYTHM" → "▶ KIT EDIT". Each of the 9 channels — KICK, SNARE,
-      HI-CL, HI-OP, RIM, COWBL, CLAP, TAMB, SHKR — has detailed parameters: LEVEL, TUNE, PAN,
-      ATTACK, DECAY, TRANSIENT, LPF/HPF, DRIVE, ROOM and more. Use each channel's "▶ TEST" button
-      to audition it on its own.</p>
-      <p><b>★ RANDOM</b> generates a whole new kit (PAN is deliberately spread left/right so
-      channels don't all end up clustered on the same side by chance). Kits can be named and
-      saved, and exported/imported as JSON.</p>`,
-  },
-  {
-    titleJa: '録音とMIX STUDIO', titleEn: 'Recording & Mix Studio',
-    bodyJa: `
-      <p>ヘッダーの<b>REC</b>ボタンで録音を開始／停止します（最大10分）。停止すると自動的に
-      <b>MIX STUDIO</b>画面が開きます。</p>
-      <h3>マイク</h3>
-      <p>SETTINGS →「MICROPHONE」で<b>MIC RECORDING</b>をONにすると、演奏と同時にマイクの声も
-      録音できます。<b>MIC MONITOR</b>をONにすると自分の声をリアルタイムでモニターでき、
-      <b>MIC LEVEL</b>で入力ゲインを調整できます。</p>
-      <h3>MIX STUDIO</h3>
-      <p>録音した「OMNI（演奏音）」「DRUM（リズム）」「VOCAL（マイク）」を個別にレベル・HPF
-      調整でき、波形をタップして再生位置を移動できます。<b>FLAT / CLEAN / WARM / DEEP</b>の
-      4プリセットに加え、VOCALにはOTT（マルチバンドダイナミクス）・DE-ESSも用意。MIX BUS全体には
-      GLUE COMP・BUS REVERB・LIMITERがかけられます。</p>
-      <p>書き出しは<b>MIX.wav</b>（全体2mix）、<b>VOCAL.wav</b>、<b>omni.wav</b>（演奏のみ）、
-      <b>drum.wav</b>（ドラムのみ）から必要なものだけ選んでダウンロードできます。</p>`,
-    bodyEn: `
-      <p>Use the <b>REC</b> button in the header to start/stop recording (up to 10 minutes).
-      When you stop, the <b>MIX STUDIO</b> screen opens automatically.</p>
-      <h3>Microphone</h3>
-      <p>Turn on <b>MIC RECORDING</b> under Settings → "MICROPHONE" to record your voice alongside
-      your playing. <b>MIC MONITOR</b> lets you hear yourself in real time, and <b>MIC LEVEL</b>
-      adjusts the input gain.</p>
-      <h3>Mix Studio</h3>
-      <p>The recorded "OMNI" (instrument), "DRUM" (rhythm) and "VOCAL" (mic) tracks each get their
-      own level/HPF controls, and you can tap the waveform to jump the playhead. Four presets —
-      <b>FLAT / CLEAN / WARM / DEEP</b> — are provided, plus OTT (multiband dynamics) and DE-ESS
-      for vocals. The whole mix bus can be shaped with GLUE COMP, BUS REVERB and a LIMITER.</p>
-      <p>Export whichever stems you need: <b>MIX.wav</b> (full 2-mix), <b>VOCAL.wav</b>,
-      <b>omni.wav</b> (instrument only) and <b>drum.wav</b> (drums only).</p>`,
-  },
-  {
-    titleJa: '設定パネルの主な項目', titleEn: 'Settings Panel Overview',
-    bodyJa: `
-      <ul>
-        <li><b>MASTER VOLUME</b> — 全体の出力音量</li>
-        <li><b>STRUM POLY / SUSTAIN / MAIN VOLUME / SUB VOLUME</b> — ストラムプレートの発音・
-          余韻・音量バランスの調整</li>
-        <li><b>RHYTHM</b> — パターン・キット選択、エディターを開くボタン、テンポ、ボリューム</li>
-        <li><b>CHORD</b> — 保持コードの音量</li>
-        <li><b>MICROPHONE</b> — マイク録音・モニター・入力レベル</li>
-        <li><b>REAL TIME CONTROL</b> — CHORD MANUAL/AUTO、CHORD HOLD、MIDI STRUM MODEのON/OFF</li>
-      </ul>`,
-    bodyEn: `
-      <ul>
-        <li><b>MASTER VOLUME</b> — overall output level</li>
-        <li><b>STRUM POLY / SUSTAIN / MAIN VOLUME / SUB VOLUME</b> — balance and sustain of the
-          strumplate voice</li>
-        <li><b>RHYTHM</b> — pattern/kit selection, editor buttons, tempo and volume</li>
-        <li><b>CHORD</b> — held-chord volume</li>
-        <li><b>MICROPHONE</b> — mic recording, monitoring and input level</li>
-        <li><b>REAL TIME CONTROL</b> — CHORD MANUAL/AUTO, CHORD HOLD, and MIDI STRUM MODE on/off</li>
-      </ul>`,
-  },
-  {
-    titleJa: '仕様', titleEn: 'Specifications',
-    bodyJa: `
-      <table class="manual-spec-table">
-        <tr><td>コード</td><td>12ルート × 9タイプ = 全108コード</td></tr>
-        <tr><td>コードタイプ</td><td>MAJ / MIN / 7 / MAJ7 / MIN7 / DIM / AUG / SUS4 / ADD9</td></tr>
-        <tr><td>ボイス（音色）</td><td>10種類（OMNI1, OMNI2, HARP, CHEAP, SYNTH, FLUTE, GUITAR, FM PIANO, ORGAN, VIBES）</td></tr>
-        <tr><td>ストラムプレート</td><td>最大3本指マルチタッチ、タップ／スライド判定、独自の配列ロジックによる音配列</td></tr>
-        <tr><td>リズムパターン</td><td>58種類（内蔵18＋LO-FIプリセット40）＋ユーザー保存無制限</td></tr>
-        <tr><td>ドラムキット</td><td>9種類（808 / 909 / LM-1 / LOFI / TAPE / JAZZ / VINYL / MINIMAL / ACOUSTIC）＋ユーザー保存</td></tr>
-        <tr><td>ドラムチャンネル</td><td>9系統（KICK, SNARE, HI-CL, HI-OP, RIM, COWBL, CLAP, TAMB, SHKR）</td></tr>
-        <tr><td>PCキーボード演奏</td><td>対応（複数キー同時押し可）</td></tr>
-        <tr><td>MIDI入力</td><td>Web MIDI API対応。既定は半音階演奏、MIDI STRUM MODE ON時はノート36〜60（C2〜C4、2オクターブ＝25鍵）を選択中コードのストラムプレート配列（13音）にマッピング。※Safari（iPhone/iPad/Macとも）は非対応</td></tr>
-        <tr><td>録音</td><td>最大10分。演奏(OMNI)／ドラム／マイク(VOCAL)を個別ステムで同時録音</td></tr>
-        <tr><td>書き出し形式</td><td>WAV（16bit PCM）。MIX / VOCAL / omni / drum を個別に書き出し可能</td></tr>
-        <tr><td>MIX STUDIOエフェクト</td><td>HPF、OTT（マルチバンド）、DE-ESS、GLUE COMP、BUS REVERB、LIMITER、4種プリセット</td></tr>
-        <tr><td>オーディオエンジン</td><td>Web Audio API（ネイティブ） + Tone.js v14.8.49</td></tr>
-        <tr><td>データ保存</td><td>ユーザーパターン／キットはブラウザのlocalStorageに保存（端末・ブラウザ単位）</td></tr>
-        <tr><td>推奨環境</td><td>Google Chrome（デスクトップ／モバイル）</td></tr>
-        <tr><td>ライセンス</td><td>All Rights Reserved（独自ライセンス）。アプリ本体の複製・改変・再配布・販売、音色のサンプリング配布・販売は非営利でも禁止。制作した楽曲などの成果物の商用利用は自由</td></tr>
-        <tr><td>リポジトリ</td><td><a href="https://github.com/egoaid/omnitro" target="_blank" rel="noopener noreferrer" style="color:var(--strumglow);">github.com/egoaid/omnitro</a></td></tr>
-      </table>`,
-    bodyEn: `
-      <table class="manual-spec-table">
-        <tr><td>Chords</td><td>12 roots × 9 types = 108 chords total</td></tr>
-        <tr><td>Chord types</td><td>MAJ / MIN / 7 / MAJ7 / MIN7 / DIM / AUG / SUS4 / ADD9</td></tr>
-        <tr><td>Voices</td><td>10 (OMNI1, OMNI2, HARP, CHEAP, SYNTH, FLUTE, GUITAR, FM PIANO, ORGAN, VIBES)</td></tr>
-        <tr><td>Strumplate</td><td>Up to 3-finger multitouch, tap/slide gesture detection, distinctive proprietary note-layout logic</td></tr>
-        <tr><td>Rhythm patterns</td><td>58 built-in (18 base + 40 Lo-Fi presets), plus unlimited user-saved patterns</td></tr>
-        <tr><td>Drum kits</td><td>9 (808 / 909 / LM-1 / LOFI / TAPE / JAZZ / VINYL / MINIMAL / ACOUSTIC), plus user-saved kits</td></tr>
-        <tr><td>Drum channels</td><td>9 (KICK, SNARE, HI-CL, HI-OP, RIM, COWBL, CLAP, TAMB, SHKR)</td></tr>
-        <tr><td>PC keyboard play</td><td>Supported, including multiple simultaneous keys</td></tr>
-        <tr><td>MIDI input</td><td>Web MIDI API; chromatic by default, or notes 36–60 (C2–C4, 2 octaves = 25 keys) mapped onto the selected chord's 13-note strumplate layout when MIDI STRUM MODE is on. *Not supported on Safari (iPhone/iPad/Mac)</td></tr>
-        <tr><td>Recording</td><td>Up to 10 minutes; instrument (OMNI), drums and mic (VOCAL) captured as separate stems simultaneously</td></tr>
-        <tr><td>Export format</td><td>WAV (16-bit PCM); MIX / VOCAL / omni / drum can each be exported individually</td></tr>
-        <tr><td>Mix Studio effects</td><td>HPF, OTT (multiband dynamics), DE-ESS, GLUE COMP, BUS REVERB, LIMITER, 4 presets</td></tr>
-        <tr><td>Audio engine</td><td>Native Web Audio API + Tone.js v14.8.49</td></tr>
-        <tr><td>Data storage</td><td>User patterns/kits are saved in the browser's localStorage (per device/browser)</td></tr>
-        <tr><td>Recommended browser</td><td>Google Chrome (desktop or mobile)</td></tr>
-        <tr><td>License</td><td>All Rights Reserved (custom license). Copying, modifying, redistributing or selling the app itself, and distributing/selling sampled voices, are prohibited even non-commercially. Commercial use of songs/works you create with it is permitted</td></tr>
-        <tr><td>Repository</td><td><a href="https://github.com/egoaid/omnitro" target="_blank" rel="noopener noreferrer" style="color:var(--strumglow);">github.com/egoaid/omnitro</a></td></tr>
-      </table>`,
-  },
-];
-
-let manualLang = 'ja';
-
-function renderManual() {
-  const body = document.getElementById('manual-body');
-  if (!body) return;
-  body.innerHTML = MANUAL_SECTIONS.map((sec, i) => {
-    const title = manualLang === 'ja' ? sec.titleJa : sec.titleEn;
-    const html  = manualLang === 'ja' ? sec.bodyJa  : sec.bodyEn;
-    return `<div class="manual-sec">
-      <div class="manual-sec-num">${String(i + 1).padStart(2, '0')}</div>
-      <h2>${title}</h2>
-      ${html}
-    </div>`;
-  }).join('');
-  body.scrollTop = 0;
-  document.getElementById('manual-lang-ja').classList.toggle('active', manualLang === 'ja');
-  document.getElementById('manual-lang-en').classList.toggle('active', manualLang === 'en');
-}
-
-function setManualLang(lang) {
-  manualLang = lang;
-  try { localStorage.setItem('omnitro_manual_lang', lang); } catch(e) {}
-  renderManual();
-}
-
-function openManual() {
-  document.getElementById('settings-overlay').classList.remove('open');
-  renderManual();
-  document.getElementById('manual-overlay').classList.add('open');
-}
-
-function closeManual() {
-  document.getElementById('manual-overlay').classList.remove('open');
-}
-
-function setupManual() {
-  try {
-    const saved = localStorage.getItem('omnitro_manual_lang');
-    if (saved === 'ja' || saved === 'en') manualLang = saved;
-  } catch(e) {}
-
-  const openBtn = document.getElementById('open-manual-btn');
-  if (openBtn) openBtn.addEventListener('click', openManual);
-
-  document.getElementById('manual-close-btn').addEventListener('click', closeManual);
-  document.getElementById('manual-lang-ja').addEventListener('click', () => setManualLang('ja'));
-  document.getElementById('manual-lang-en').addEventListener('click', () => setManualLang('en'));
-}
-
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 buildChordGrid();
 buildSimpleChordGrid();
@@ -10815,22 +10019,9 @@ setupInstantOff();
 setupKitEditor();
 setChordMode(true);
 setupMidi();
-setupManual();
 
 // 起動時に最初のプリセットをロード（editorStateとselectを初期化）
 loadPatternByName('lofi01');
-
-// ─── PWA: Service Worker登録 ─────────────────────────────────────────────────
-// index.html と同じディレクトリに manifest.json / sw.js / icon-*.png が
-// 揃っている場合のみオフライン対応・ホーム画面追加が有効になる。
-// ファイルが見つからない場合は静かに失敗し、通常のブラウザ動作を継続する。
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {
-      // sw.js が同階層に無い環境（単体HTMLとして開いた場合など）は無視
-    });
-  });
-}
 </script>
 </body>
 </html>
