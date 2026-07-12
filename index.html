@@ -1915,50 +1915,14 @@
       </div>
     </div>
 
-    <!-- Channel strip: OMNI + DRUM + MIC を常に均等な3列で表示（未収録時はグレーアウト） -->
-    <div class="studio-section">
-      <div class="studio-ch-header" style="grid-template-columns:46px 1fr 1fr 1fr;">
-        <div class="studio-ch-label" style="color:var(--strumglow);">OMNI</div>
-        <div class="studio-ch-label drum-col" style="color:#d4e040;" id="drum-col-label">DRUM</div>
-        <div class="studio-ch-label vocal-col" id="vocal-col-label" style="color:#a78bfa;">MIC</div>
-      </div>
-      <!-- Level -->
-      <div class="studio-ch-row" style="grid-template-columns:46px 1fr 1fr 1fr;">
-        <div class="studio-ch-param">LEVEL</div>
-        <div class="studio-ch-ctrl">
-          <input type="range" class="ch-slider" id="s-music-vol" min="0" max="150" value="100">
-          <div class="ch-val" id="v-music-vol">100</div>
-        </div>
-        <div class="studio-ch-ctrl drum-col" id="drum-level-row">
-          <input type="range" class="ch-slider" id="s-drum-vol" min="0" max="150" value="100">
-          <div class="ch-val" id="v-drum-vol">100</div>
-        </div>
-        <div class="studio-ch-ctrl vocal-col" id="vocal-level-row">
-          <input type="range" class="ch-slider" id="s-vocal-vol" min="0" max="150" value="100">
-          <div class="ch-val" id="v-vocal-vol">100</div>
-        </div>
-      </div>
-      <!-- HPF -->
-      <div class="studio-ch-row" style="grid-template-columns:46px 1fr 1fr 1fr;">
-        <div class="studio-ch-param">HPF Hz</div>
-        <div class="studio-ch-ctrl">
-          <input type="range" class="ch-slider" id="s-music-hpf" min="20" max="500" value="20" step="10">
-          <div class="ch-val" id="v-music-hpf">20</div>
-        </div>
-        <div class="studio-ch-ctrl drum-col" id="drum-hpf-row">
-          <input type="range" class="ch-slider" id="s-drum-hpf" min="20" max="500" value="20" step="10">
-          <div class="ch-val" id="v-drum-hpf">20</div>
-        </div>
-        <div class="studio-ch-ctrl vocal-col" id="vocal-hpf-row">
-          <input type="range" class="ch-slider" id="s-vocal-hpf" min="20" max="500" value="80" step="10">
-          <div class="ch-val" id="v-vocal-hpf">80</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Mic Dynamics -->
     <div class="studio-section" id="vocal-eq-section">
       <div class="studio-section-label">MIC — DYNAMICS</div>
+      <div class="control-row">
+        <div class="control-label">GAIN</div>
+        <input type="range" id="s-mic-gain" min="-12" max="24" value="0" step="1">
+        <div class="control-value" id="v-mic-gain">0 dB</div>
+      </div>
       <div class="control-row">
         <div class="control-label">OTT</div>
         <input type="range" id="s-ott" min="0" max="100" value="0">
@@ -7817,19 +7781,8 @@ const studioState = {
   masterLim:    null,
   playOut:      null,
 
-  // MUSIC(OMNI) channel settings
-  musicVol:     1.0,
-  musicHpf:     20,
-
-  // DRUM channel settings
-  drumVol:      1.0,
-  drumHpf:      20,
-
-  // VOCAL channel settings
-  vocalVol:     1.0,
-  vocalHpf:     80,
-
   // Vocal Dynamics
+  micGainDb:    0,     // Mic gain boost/cut in dB (-12 to +24)
   ottAmt:       0,     // OTT multiband dynamics strength (0-100)
   deEssAmt:     0,     // 6-8kHz de-esser amount (0-100)
 
@@ -8357,18 +8310,7 @@ function openMixStudio() {
   const hasMic  = !!recState.micBuf;
   const hasDrum = !!recState.drumBuf;
 
-  // OMNI/DRUM/MIC の3列は常に均等なグリッドで表示したまま、未収録のチャンネルは
-  // グレーアウト＋操作不可にする（display:none で消すと列幅が可変になり、
-  // 有効時にスライダーが枠からはみ出す原因になっていたため）。
-  function setColState(selector, enabled) {
-    document.querySelectorAll(selector).forEach(el => {
-      el.classList.toggle('ch-col-disabled', !enabled);
-      el.querySelectorAll('input').forEach(inp => { inp.disabled = !enabled; });
-    });
-  }
-  setColState('.vocal-col', hasMic);
-  setColState('.drum-col',  hasDrum);
-
+  // MIC — DYNAMICS（GAIN/OTT/DE-ESS）は、マイク未収録時はグレーアウト＋操作不可にする。
   const vocalEqSection = document.getElementById('vocal-eq-section');
   if (vocalEqSection) {
     vocalEqSection.classList.toggle('ch-col-disabled', !hasMic);
@@ -8744,36 +8686,31 @@ function buildGlueComp(ctx, destNode, amt) {
   return comp;
 }
 
-// ── MUSIC チャンネル: HPF→LPF→Reverb（コンプなし） ──────────────────────────
-// ── MUSIC チャンネル: gain → HPF → playBus ───────────────────────────────────
-function buildMusicChainNodes(ctx, buf, ss, playBus) {
-  const src  = ctx.createBufferSource(); src.buffer = buf;
-  const gain = ctx.createGain(); gain.gain.value = ss.musicVol;
-  const hpf  = ctx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=ss.musicHpf; hpf.Q.value=0.5;
-  src.connect(gain); gain.connect(hpf); hpf.connect(playBus);
-  return { src, gain, hpf };
+// ── OMNI / DRUM チャンネル: src → playBus（直結、レベル/HPF処理なし） ────────
+// 以前はOMNI/DRUM個別にLEVEL/HPFスライダーを持っていたが、接続の複雑さの
+// 割に実用上不要という判断で撤去した。録音そのまま（instBus/drumBusの
+// タップ内容そのまま）をplayBusへ流すだけのシンプルな経路にしている。
+function buildMusicChainNodes(ctx, buf, playBus) {
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  src.connect(playBus);
+  return { src };
 }
 
-// ── DRUM チャンネル: gain → HPF → playBus（buildMusicChainNodesのDRUM版） ──
-// 以前は再生時にDRUM専用のチェーンが一切構築されておらず、DRUMのLEVEL/HPF
-// スライダーが再生中は完全に無効化されていた。この関数で omni と同じ構造の
-// 独立したチェーンを DRUM 設定（ss.drumVol/ss.drumHpf）で構築する。
-function buildDrumChainNodes(ctx, buf, ss, playBus) {
-  const src  = ctx.createBufferSource(); src.buffer = buf;
-  const gain = ctx.createGain(); gain.gain.value = ss.drumVol ?? 1.0;
-  const hpf  = ctx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value = ss.drumHpf ?? 20; hpf.Q.value = 0.5;
-  src.connect(gain); gain.connect(hpf); hpf.connect(playBus);
-  return { src, gain, hpf };
+function buildDrumChainNodes(ctx, buf, playBus) {
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  src.connect(playBus);
+  return { src };
 }
 
-// ── VOCAL チャンネル: gain → HPF → [OTT] → [DeEss] → playBus ────────────────
+// ── MIC チャンネル: gain(dB指定のブースト) → [OTT] → [DeEss] → playBus ──────
+// LEVEL(0-100%減衰専用)とHPFは撤去。代わりに「MIC — DYNAMICS」の GAIN
+// スライダー(-12dB〜+24dB)で必要なだけブーストできるようにした。
 function buildVocalChainNodes(ctx, buf, ss, playBus) {
   const src  = ctx.createBufferSource(); src.buffer = buf;
-  const gain = ctx.createGain(); gain.gain.value = ss.vocalVol;
-  const hpf  = ctx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=ss.vocalHpf; hpf.Q.value=0.7;
-  src.connect(gain); gain.connect(hpf);
+  const gain = ctx.createGain(); gain.gain.value = Math.pow(10, (ss.micGainDb || 0) / 20);
+  src.connect(gain);
 
-  let lastNode  = hpf;
+  let lastNode  = gain;
   let ottGraph  = null;
   let deEssGraph = null;
 
@@ -8792,7 +8729,7 @@ function buildVocalChainNodes(ctx, buf, ss, playBus) {
   }
 
   lastNode.connect(playBus);
-  return { src, gain, hpf, ottGraph, deEssGraph };
+  return { src, gain, ottGraph, deEssGraph };
 }
 
 function destroyChain(chain) {
@@ -8886,18 +8823,17 @@ function studioPlay(offsetSec) {
   const off = offsetSec != null ? offsetSec : studioState.playStartBufOffset;
   const ss  = studioState;
 
-  // OMNI と DRUM をそれぞれ独立したバッファ（omniBuf / drumBuf）から個別の
-  // チェーンで再生する。以前は合算済みの instBuf（mixタップ）だけを OMNI の
-  // 設定で再生していたため、DRUMのLEVEL/HPFスライダーが再生に一切反映されず、
-  // OMNIスライダーが実質「マスター音量」のように両方を制御してしまっていた。
+  // OMNI と DRUM をそれぞれ独立したバッファ（omniBuf / drumBuf）から個別に
+  // 再生する（LEVEL/HPF処理は撤去、録音そのままを直結）。MICのみゲイン調整
+  // と OTT/DE-ESS を適用する。
   if (recState.omniBuf) {
-    ss.instChain = buildMusicChainNodes(ctx, recState.omniBuf, ss, ss.playBus);
+    ss.instChain = buildMusicChainNodes(ctx, recState.omniBuf, ss.playBus);
     ss.instChain.src.start(0, Math.min(off, recState.omniBuf.duration));
     ss.instChain.src.onended = () => { if (ss.playing) studioPause(); };
   }
 
   if (recState.drumBuf) {
-    ss.drumChain = buildDrumChainNodes(ctx, recState.drumBuf, ss, ss.playBus);
+    ss.drumChain = buildDrumChainNodes(ctx, recState.drumBuf, ss.playBus);
     ss.drumChain.src.start(0, Math.min(off, recState.drumBuf.duration));
   }
 
@@ -9032,22 +8968,7 @@ function buildOfflineOtt(offCtx, destNode, amt) {
   return { inputNode: inputG };
 }
 
-// MUSIC channel offline render: gain → HPF → destination
-async function renderInst(srcBuf) {
-  if (!srcBuf) return null;
-  const ss  = studioState;
-  const sr  = srcBuf.sampleRate;
-  const nCh = Math.min(srcBuf.numberOfChannels, 2);
-  const off = new OfflineAudioContext(nCh, srcBuf.length, sr);
-  const src  = off.createBufferSource(); src.buffer = srcBuf;
-  const gain = off.createGain(); gain.gain.value = ss.musicVol;
-  const hpf  = off.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=ss.musicHpf; hpf.Q.value=0.5;
-  src.connect(gain); gain.connect(hpf); hpf.connect(off.destination);
-  src.start(0);
-  return await off.startRendering();
-}
-
-// VOCAL channel offline render: gain → HPF → [OTT] → [DeEss] → destination
+// MIC channel offline render: gain(dB) → [OTT] → [DeEss] → destination
 async function renderVocal(srcBuf) {
   if (!srcBuf) return null;
   const ss  = studioState;
@@ -9056,11 +8977,10 @@ async function renderVocal(srcBuf) {
   const off = new OfflineAudioContext(nCh, srcBuf.length, sr);
 
   const src  = off.createBufferSource(); src.buffer = srcBuf;
-  const gain = off.createGain(); gain.gain.value = ss.vocalVol;
-  const hpf  = off.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=ss.vocalHpf; hpf.Q.value=0.7;
-  src.connect(gain); gain.connect(hpf);
+  const gain = off.createGain(); gain.gain.value = Math.pow(10, (ss.micGainDb || 0) / 20);
+  src.connect(gain);
 
-  let lastNode = hpf;
+  let lastNode = gain;
 
   // OTT
   if (ss.ottAmt >= 1) {
@@ -9132,21 +9052,6 @@ async function applyBusRvbOffline(srcBuf, busRvb, rvbSize) {
 }
 
 // ── Export ─────────────────────────────────────────────────────────────────────
-// ── DRUM channel offline render ──────────────────────────────────────────────
-async function renderDrum(srcBuf) {
-  if (!srcBuf) return null;
-  const ss  = studioState;
-  const sr  = srcBuf.sampleRate;
-  const nCh = Math.min(srcBuf.numberOfChannels, 2);
-  const off = new OfflineAudioContext(nCh, srcBuf.length, sr);
-  const src  = off.createBufferSource(); src.buffer = srcBuf;
-  const gain = off.createGain(); gain.gain.value = (ss.drumVol ?? 1.0);
-  const hpf  = off.createBiquadFilter();
-  hpf.type = 'highpass'; hpf.frequency.value = ss.drumHpf ?? 20; hpf.Q.value = 0.5;
-  src.connect(gain); gain.connect(hpf); hpf.connect(off.destination);
-  src.start(0);
-  return await off.startRendering();
-}
 
 // ── サンプル単位減算: instBuf（omni+drum）- drumBuf（drum）= omniのみ ─────────
 // 音の接続は変えず、オフライン処理で omni を分離する
@@ -9213,16 +9118,14 @@ async function studioExport() {
   const ts      = tsStr();
 
   try {
-    // omniBuf = instBus録音（コンプ前のomniのみ、omni.wav用、OMNI設定を適用）
-    // drumBuf = drumBus録音（drumのみ、drum.wav用、DRUM設定を適用）
-    // micBuf  = mic録音（mic.wav用）
-    // mix.wav は「OMNI設定適用済みomni」+「DRUM設定適用済みdrum」+「vocal」を
-    // 合算して作る。以前は合算済みの instBuf（mixタップ）をそのままOMNI設定で
-    // 処理していたため、DRUMのLEVEL/HPF設定がmix.wavに一切反映されなかった。
+    // omniBuf = instBus録音（コンプ前のomniのみ、omni.wav用、処理なしそのまま）
+    // drumBuf = drumBus録音（drumのみ、drum.wav用、処理なしそのまま）
+    // micBuf  = mic録音（GAIN/OTT/DE-ESSを適用した上でmic.wav用）
+    // mix.wav は「omni」+「drum」+「処理済みvocal」を合算して作る。
 
-    const omniR  = recState.omniBuf ? await renderInst(recState.omniBuf)  : null;
-    const drumR  = recState.drumBuf ? await renderDrum(recState.drumBuf)  : null;
-    const vocalR = recState.micBuf  ? await renderVocal(recState.micBuf) : null;
+    const omniR  = recState.omniBuf;
+    const drumR  = recState.drumBuf;
+    const vocalR = recState.micBuf ? await renderVocal(recState.micBuf) : null;
 
     async function finalize(buf) {
       if (!buf) return null;
@@ -9250,7 +9153,7 @@ async function studioExport() {
       await new Promise(r => setTimeout(r, 300));
     }
 
-    // mix.wav = omni（OMNI設定適用済み）+ drum（DRUM設定適用済み）+ vocal を合算
+    // mix.wav = omni + drum（いずれも処理なし） + 処理済みvocal を合算
     if (doMix && (omniR || drumR)) {
       let mixed = await mixBuffers(omniR, drumR);
       if (vocalR) mixed = await mixBuffers(mixed, vocalR);
@@ -9282,38 +9185,30 @@ async function applyLimiterOffline(srcBuf, threshDb) {
 }
 
 // ── Studio presets ─────────────────────────────────────────────────────────────
-// 各プリセットはデュアルチャンネル構成。
-// MUSIC: オムニコードの帯域特性を尊重した処理
-// VOCAL: 歌声に適した処理（両者が同じ空間に馴染むよう設計）
+// OMNI/DRUMは処理なしで直結のため、プリセットが調整するのはMICのGAINと
+// DYNAMICS（OTT/DE-ESS）、および共有バスの処理のみ。
 const PRESETS = {
   // FLAT: 完全素通し。全エフェクト無効。録音の確認用。
   flat: {
-    musicVol:100, musicHpf:20,
-    vocalVol:100, vocalHpf:20,
+    micGainDb:0,
     ottAmt:0, deEssAmt:0,
     glueAmt:0, busRvb:0, rvbSize:45, limitDb:-1,
   },
-  // CLEAN: HPFで低域ノイズをカット。エフェクトは最小限。
-  // ボーカルと演奏音のバランスを自分で決めたいときに。
+  // CLEAN: エフェクトは最小限。ボーカルと演奏音のバランスを自分で決めたいときに。
   clean: {
-    musicVol:100, musicHpf:40,
-    vocalVol:100, vocalHpf:100,
+    micGainDb:0,
     ottAmt:0, deEssAmt:0,
     glueAmt:0, busRvb:0, rvbSize:45, limitDb:-1,
   },
-  // WARM: OTT軽め（声のダイナミクスを整える）+ Glue Compで
-  // ボーカルと演奏音を自然にまとめる。日常的な弾き語りに。
+  // WARM: MICを軽くブースト + OTT軽め + Glue Compで自然にまとめる。日常的な弾き語りに。
   warm: {
-    musicVol:100, musicHpf:40,
-    vocalVol:105, vocalHpf:100,
+    micGainDb:3,
     ottAmt:35, deEssAmt:20,
     glueAmt:30, busRvb:15, rvbSize:40, limitDb:-1,
   },
-  // DEEP: OTT強め + Bus Reverbで豊かな空間感。
-  // 声とオムニコードが同じ空間にいる質感を出す。
+  // DEEP: MICをしっかりブースト + OTT強め + Bus Reverbで豊かな空間感。
   deep: {
-    musicVol:100, musicHpf:55,
-    vocalVol:110, vocalHpf:120,
+    micGainDb:6,
     ottAmt:60, deEssAmt:35,
     glueAmt:45, busRvb:35, rvbSize:55, limitDb:-1,
   },
@@ -9323,8 +9218,7 @@ function applyPreset(name) {
   const p = PRESETS[name];
   if (!p) return;
   const ss = studioState;
-  ss.musicVol = p.musicVol/100; ss.musicHpf = p.musicHpf;
-  ss.vocalVol = p.vocalVol/100; ss.vocalHpf = p.vocalHpf;
+  ss.micGainDb = p.micGainDb;
   ss.ottAmt   = p.ottAmt;       ss.deEssAmt = p.deEssAmt;
   ss.glueAmt  = p.glueAmt;      ss.busRvb   = p.busRvb;
   ss.rvbSize  = p.rvbSize;      ss.limitDb  = p.limitDb;
@@ -9333,10 +9227,7 @@ function applyPreset(name) {
     const el = document.getElementById(id); if(el) el.value = val;
     const vl = document.getElementById(id.replace(/^s-/,'v-')); if(vl) vl.textContent = fmtFn ? fmtFn(val) : val;
   };
-  set('s-music-vol', p.musicVol, v=>v);
-  set('s-music-hpf', p.musicHpf, v=>v);
-  set('s-vocal-vol', p.vocalVol, v=>v);
-  set('s-vocal-hpf', p.vocalHpf, v=>v);
+  set('s-mic-gain',  p.micGainDb, v=>v+' dB');
   set('s-ott',       p.ottAmt,   v=>v);
   set('s-deess',     p.deEssAmt, v=>v);
   set('s-glue',      p.glueAmt,  v=>v);
@@ -9791,15 +9682,10 @@ function setupMixStudio() {
     btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
   });
 
-  // Channel strip sliders
+  // Mic dynamics + bus sliders
   const BUS_REBUILD = true;
   const chSliders = [
-    ['s-music-vol',  'musicVol',    v=>v/100, v=>v,   false],
-    ['s-music-hpf',  'musicHpf',    v=>v,     v=>v,   false],
-    ['s-drum-vol',   'drumVol',     v=>v/100, v=>v,   false],
-    ['s-drum-hpf',   'drumHpf',     v=>v,     v=>v,   false],
-    ['s-vocal-vol',  'vocalVol',    v=>v/100, v=>v,   false],
-    ['s-vocal-hpf',  'vocalHpf',    v=>v,     v=>v,   false],
+    ['s-mic-gain',   'micGainDb',   v=>v,     v=>v+' dB', false],
     ['s-ott',        'ottAmt',      v=>v,     v=>v,   false],
     ['s-deess',      'deEssAmt',    v=>v,     v=>v,   false],
     ['s-glue',       'glueAmt',     v=>v,     v=>v,   BUS_REBUILD],
