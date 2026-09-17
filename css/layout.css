@@ -1,0 +1,162 @@
+  /* ─── MAIN LAYOUT ─── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, #0d1b2a 0%, #0a1220 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ─── HEADER ─── */
+  #header {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 5px 10px 5px;
+    background: linear-gradient(90deg, #0a0f1a, #111827, #0a0f1a);
+    border-bottom: 1px solid #2a3a4a;
+    flex-shrink: 0;
+  }
+
+  .logo-area {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .logo-brand {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    font-weight: 400;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .logo-model {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--accent1);
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(232,201,90,0.4);
+    text-transform: lowercase;
+    line-height: 1;
+  }
+
+  /* voice name — 下揃えで logo-model の底辺に合わせる */
+  .header-voice-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    color: var(--strumglow);
+    letter-spacing: 1px;
+    flex: 1;
+    text-align: left;
+    padding-left: 4px;
+    padding-bottom: 1px;   /* logo-model の bottom に揃える */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1;
+  }
+
+  /* shared header button style */
+  .header-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: var(--raised);
+    transition: all 0.15s;
+    flex-shrink: 0;
+    padding: 5px 8px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .header-btn:active { transform: scale(0.95); }
+
+  /* play button: teal/green accent */
+  .play-header-btn {
+    background: #0a1a10;
+    border: 1px solid #27ae60;
+    color: #27ae60;
+  }
+  .play-header-btn.playing {
+    background: #27ae60;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(39,174,96,0.5);
+  }
+
+  .led {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #333;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+    transition: all 0.15s;
+  }
+  .led.green.on { background: #2ecc71; box-shadow: 0 0 6px #2ecc71, 0 0 12px rgba(46,204,113,0.4); }
+  .led.red.on { background: #e74c3c; box-shadow: 0 0 6px #e74c3c, 0 0 12px rgba(231,76,60,0.4); }
+  .led.amber.on { background: var(--accent1); box-shadow: 0 0 6px var(--accent1), 0 0 12px rgba(232,201,90,0.4); }
+
+  #settings-btn {
+    background: #1a2a3a;
+    border: 1px solid #2a4a6a;
+    color: var(--accent1);
+    padding: 6px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: var(--raised);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  #settings-btn:hover { border-color: var(--accent1); }
+  #settings-btn:active { transform: scale(0.95); background: #111; }
+  #settings-btn svg { display: block; }
+
+  /* chord-display: inside instant-off plate */
+  .chord-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent1);
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(232,201,90,0.5);
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+    line-height: 1;
+  }
+
+  /* ─── ARRANGEMENT: FILL / RANDOM 実行状態の視覚表現 ─────────────────────── */
+  /* FILL: 次の小節境界への切り替えを待っている間、ゆっくり明滅させる */
+  @keyframes fill-pulse-queued {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(251,146,60,0.4); }
+    50%      { opacity: 0.45; box-shadow: 0 0 2px rgba(251,146,60,0.15); }
+  }
+  /* FILL: 実際に演奏中は、はっきり分かる速い明滅＋発光で強調する */
+  @keyframes fill-pulse-active {
+    0%, 100% { background: #fb923c; color: #1a1000; box-shadow: 0 0 10px rgba(251,146,60,0.9); }
+    50%      { background: #ffb877; color: #1a1000; box-shadow: 0 0 16px rgba(251,146,60,1); }
+  }
+  .fill-queued  { animation: fill-pulse-queued 0.55s ease-in-out infinite; }
+  .fill-active  { animation: fill-pulse-active 0.35s ease-in-out infinite; border-color: #fb923c !important; }
+
+  /* RANDOM/HUMANIZE: 次の小節境界への切り替えを待っている間、PLAYボタン群を
+     紫色に明滅させて「変更が予約されている」ことを示す */
+  @keyframes randomize-pending-pulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(167,139,250,0.5); border-color: #a78bfa; }
+    50%      { box-shadow: 0 0 14px rgba(167,139,250,0.95); border-color: #d8ccff; }
+  }
+  .randomize-pending { animation: randomize-pending-pulse 0.5s ease-in-out infinite; }
+

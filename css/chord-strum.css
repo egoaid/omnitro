@@ -1,0 +1,513 @@
+  /* ─── CHORD SECTION ─── */
+  #chord-section {
+    flex: 1;
+    padding: 4px 4px 4px;
+    background: linear-gradient(180deg, #0a1220 0%, #060e18 100%);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* ── SIMPLE MODE: left/right split ── */
+  #simple-play-area {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    gap: 4px;
+  }
+  #simple-play-area.active { display: flex; }
+
+  /* Left: simple chord buttons */
+  #simple-chord-wrap {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 2px;
+  }
+
+  /* Simple chord grid: 12 rows × 3 cols (ラベル列なし) */
+  #simple-chord-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    gap: 3px;
+    min-height: 0;
+    touch-action: none;
+  }
+
+  .simple-key {
+    background: #0c1828;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.06s;
+    gap: 1px;
+  }
+  .simple-key::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  /* Column colors */
+  .simple-key.col-maj { border: 1px solid #1a4a7a; background: #081828; }
+  .simple-key.col-min { border: 1px solid #3a1a6a; background: #100818; }
+  .simple-key.col-7th { border: 1px solid #4a2a0a; background: #180c04; }
+  .simple-key.flat-row { filter: brightness(0.82); }
+
+  /* chord name inside button */
+  .simple-key-root {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    pointer-events: none;
+    letter-spacing: 0;
+  }
+  .simple-key-type {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    line-height: 1;
+    pointer-events: none;
+    opacity: 0.75;
+    letter-spacing: 0;
+  }
+  .col-maj .simple-key-root { color: #4fc3f7; }
+  .col-maj .simple-key-type { color: #4fc3f7; }
+  .col-min .simple-key-root { color: #a78bfa; }
+  .col-min .simple-key-type { color: #a78bfa; }
+  .col-7th .simple-key-root { color: #fb923c; }
+  .col-7th .simple-key-type { color: #fb923c; }
+
+  /* Active states */
+  .simple-key.pressed {
+    transform: scale(0.92);
+    z-index: 2;
+  }
+  .simple-key.pressed.col-maj {
+    background: #0a2a50 !important;
+    border-color: #4fc3f7 !important;
+    box-shadow: 0 0 10px rgba(79,195,247,0.5);
+  }
+  .simple-key.pressed.col-min {
+    background: #200a40 !important;
+    border-color: #a78bfa !important;
+    box-shadow: 0 0 10px rgba(167,139,250,0.5);
+  }
+  .simple-key.pressed.col-7th {
+    background: #301008 !important;
+    border-color: #fb923c !important;
+    box-shadow: 0 0 10px rgba(251,146,60,0.5);
+  }
+
+  /* Resolved chord label on a pressed button */
+  .chord-resolved-badge {
+    position: absolute;
+    bottom: 2px;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 7px;
+    color: var(--accent1);
+    letter-spacing: 0;
+    pointer-events: none;
+    line-height: 1;
+    text-shadow: 0 0 4px rgba(232,201,90,0.8);
+  }
+
+  /* Right: strumplate in simple mode (vertical strip) */
+  #simple-strum-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 3px;
+  }
+
+  /* ── Instant OFF plate ── */
+  #instant-off {
+    flex-shrink: 0;
+    height: 44px;
+    background: linear-gradient(180deg, #1a0a0e 0%, #0e0608 100%);
+    border: 1px solid #5a1a2a;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    gap: 3px;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.7), 0 0 6px rgba(192,57,43,0.1);
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: all 0.1s;
+    position: relative;
+    overflow: hidden;
+  }
+  #instant-off::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  #instant-off:active {
+    background: linear-gradient(180deg, #3a0a10 0%, #200508 100%);
+    border-color: var(--accent2);
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.8), 0 0 12px rgba(192,57,43,0.4);
+  }
+  #instant-off-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    pointer-events: none;
+  }
+  /* The strumplate itself is shared — just resized by parent */
+
+  /* ── FULL MODE: original vertical layout ── */
+  #full-play-area {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #full-play-area.active { display: flex; }
+
+  /* The main chord grid: rows=roots, cols=types */
+  #chord-grid-wrap {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    gap: 3px;
+  }
+
+  /* Left label column for root names */
+  #chord-root-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+    width: 28px;
+    padding-top: 18px;
+  }
+  .root-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 4px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-dim);
+    line-height: 1;
+    min-height: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .root-label.flat-root { color: #7ab0cc; }
+
+  .settings-title, .settings-group-label, .control-label, .control-value, .toggle-label,
+  .tempo-label, .tempo-value, .voice-btn, .toggle, .chord-key, .simple-key {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #chord-grid-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  #chord-type-header {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .type-header-cell {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 7px;
+    color: var(--accent3);
+    letter-spacing: 0;
+    padding: 2px 0;
+    border-bottom: 1px solid #1a3a2a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  #chord-keys {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    gap: 2px;
+    min-height: 0;
+  }
+
+  .chord-key {
+    background: var(--chord-bg);
+    border: 1px solid var(--chord-border);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.08s, border-color 0.08s, transform 0.06s;
+    box-shadow: var(--raised);
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+  .chord-key::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 35%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent);
+    pointer-events: none;
+  }
+  .chord-key[data-col="0"] { border-color: #2a4060; }
+  .chord-key[data-col="1"] { border-color: #2a3a50; }
+  .chord-key[data-col="2"] { border-color: #3a2a40; }
+  .chord-key[data-col="3"] { border-color: #2a4040; }
+  .chord-key[data-col="4"] { border-color: #2a3a40; }
+  .chord-key[data-col="5"] { border-color: #3a3020; }
+  .chord-key[data-col="6"] { border-color: #3a2020; }
+  .chord-key[data-col="7"] { border-color: #203a30; }
+  .chord-key[data-col="8"] { border-color: #302040; }
+  .chord-key.flat-row { background: #060c14; }
+  .chord-key.active {
+    background: var(--chord-active-bg) !important;
+    border-color: var(--chord-active) !important;
+    box-shadow: 0 0 8px rgba(232,201,90,0.5), var(--inset);
+    transform: scale(0.93);
+    z-index: 1;
+  }
+
+  /* ─── STRUMPLATE SECTION (full mode only) ─── */
+  #strumplate-section {
+    flex: 1;
+    padding: 4px 8px 6px;
+    display: none;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #strumplate-section.active { display: flex; }
+
+  #strumplate-full {
+    flex: 1;
+    background: linear-gradient(180deg, #0d2035 0%, #061220 100%);
+    border: 1px solid #1a4a7a;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    cursor: crosshair;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.8), 0 0 0 1px rgba(79,195,247,0.1);
+    touch-action: none;
+  }
+  #strumplate-full::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg, transparent,
+      transparent calc(100%/48 - 1px),
+      rgba(79,195,247,0.06) calc(100%/48 - 1px),
+      rgba(79,195,247,0.06) calc(100%/48)
+    );
+    pointer-events: none;
+  }
+
+  .section-label {
+    font-size: 8px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    padding-left: 2px;
+  }
+
+  #strumplate {
+    flex: 1;
+    background: linear-gradient(180deg, #0d2035 0%, #061220 100%);
+    border: 1px solid #1a4a7a;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    cursor: crosshair;
+    box-shadow: 
+      inset 0 2px 8px rgba(0,0,0,0.8),
+      inset 0 -1px 4px rgba(79,195,247,0.05),
+      0 0 0 1px rgba(79,195,247,0.1);
+    touch-action: none !important;
+  }
+
+  /* Horizontal strumplate decorative lines (full mode) */
+  #strumplate.horizontal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent calc(100%/48 - 1px),
+      rgba(79,195,247,0.06) calc(100%/48 - 1px),
+      rgba(79,195,247,0.06) calc(100%/48)
+    );
+    pointer-events: none;
+  }
+
+  /* Vertical strumplate decorative lines (simple mode) */
+  #strumplate.vertical::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent calc(100%/48 - 1px),
+      rgba(79,195,247,0.06) calc(100%/48 - 1px),
+      rgba(79,195,247,0.06) calc(100%/48)
+    );
+    pointer-events: none;
+  }
+
+  /* Octave markers - horizontal */
+  .strum-octave-markers {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+  }
+  .strum-octave-markers.vertical {
+    flex-direction: column;
+  }
+  .strum-octave {
+    flex: 1;
+    border-right: 1px solid rgba(79,195,247,0.15);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 4px;
+  }
+  .strum-octave-markers.vertical .strum-octave {
+    border-right: none;
+    border-bottom: 1px solid rgba(79,195,247,0.15);
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 0;
+    padding-right: 4px;
+  }
+  .strum-octave:last-child { border-right: none; border-bottom: none; }
+  .strum-octave-label {
+    font-size: 8px;
+    color: rgba(79,195,247,0.3);
+    letter-spacing: 1px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Touch indicator - horizontal */
+  .strum-touch-indicator {
+    position: absolute;
+    width: 2px;
+    top: 4px;
+    bottom: 4px;
+    left: 0;
+    background: linear-gradient(180deg, transparent, rgba(79,195,247,0.8), rgba(255,255,255,0.9), rgba(79,195,247,0.8), transparent);
+    border-radius: 1px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.05s, background 0.15s;
+    box-shadow: 0 0 8px rgba(79,195,247,0.8), 0 0 16px rgba(79,195,247,0.4);
+  }
+  /* Touch indicator - vertical */
+  .strum-touch-indicator.vertical {
+    width: calc(100% - 8px);
+    height: 2px;
+    top: auto;
+    bottom: auto;
+    left: 4px;
+    right: 4px;
+    background: linear-gradient(90deg, transparent, rgba(79,195,247,0.8), rgba(255,255,255,0.9), rgba(79,195,247,0.8), transparent);
+  }
+  .strum-touch-indicator.visible { opacity: 1; }
+  .strum-touch-indicator.hold-mode {
+    background: linear-gradient(180deg, transparent, rgba(255,200,80,0.8), rgba(255,240,180,0.95), rgba(255,200,80,0.8), transparent);
+    box-shadow: 0 0 12px rgba(255,200,80,0.9), 0 0 24px rgba(255,200,80,0.4);
+  }
+  .strum-touch-indicator.vertical.hold-mode {
+    height: 6px;
+    background: linear-gradient(90deg, transparent, rgba(255,200,80,0.8), rgba(255,240,180,0.95), rgba(255,200,80,0.8), transparent);
+  }
+
+  .strum-mode-label {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: rgba(79,195,247,0.5);
+    pointer-events: none;
+    transition: color 0.2s, opacity 0.2s;
+    opacity: 0;
+  }
+  .strum-mode-label.visible { opacity: 1; }
+  .strum-mode-label.hold { color: rgba(255,200,80,0.8); }
+
+  /* Note flash dots along the strumplate */
+  .note-flash {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(79,195,247,0.9);
+    box-shadow: 0 0 8px rgba(79,195,247,1), 0 0 20px rgba(79,195,247,0.5);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: flashFade 0.4s ease-out forwards;
+  }
+  @keyframes flashFade {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  }
+
+  .strum-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .strum-hint-text {
+    font-size: 11px;
+    color: rgba(79,195,247,0.25);
+    letter-spacing: 2px;
+    font-family: 'Orbitron', sans-serif;
+  }
+  .strum-hint.hidden { opacity: 0; }
+

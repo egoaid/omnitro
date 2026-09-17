@@ -1,0 +1,20 @@
+{
+  "name": "omnitro（オムニトロ）",
+  "short_name": "omnitro",
+  "description": "コードボタンとストラムプレートで演奏するブラウザ楽器アプリ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a1220",
+  "theme_color": "#0d1b2a",
+  "lang": "ja",
+  "dir": "ltr",
+  "categories": ["music", "entertainment"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>omnitro v1.5 — オムニトロ｜コード×ストラムプレートで弾くブラウザ楽器</title>
+
+<!-- ─── SEO / AIO（検索エンジン・AI要約向け） ─── -->
+<meta name="description" content="omnitro（オムニトロ）は、コードボタンとストラムプレートで演奏するブラウザ楽器アプリ。全108コード、10種類の音色、58種類のリズムパターン、9種類のドラムキット、録音・MIX STUDIO、PCキーボード／MIDIキーボード演奏に対応。インストール不要、ブラウザだけで演奏できます。">
+<meta name="keywords" content="omnitro,オムニトロ,ストラムプレート,コード楽器,ブラウザ楽器,Web Audio API,Tone.js,弾き語り,作曲,リズムマシン,オムニコード風">
+<meta name="author" content="egoaid">
+<meta name="robots" content="index, follow">
+<meta name="application-name" content="omnitro">
+<link rel="canonical" href="https://egoaid.github.io/omnitro/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="omnitro">
+<meta property="og:title" content="omnitro（オムニトロ）— コード×ストラムプレートで弾くブラウザ楽器">
+<meta property="og:description" content="全108コード×ストラムプレートで演奏できるブラウザ楽器アプリ。リズムマシン・録音・MIDI対応、インストール不要。">
+<meta property="og:url" content="https://egoaid.github.io/omnitro/">
+<meta property="og:image" content="https://egoaid.github.io/omnitro/icons/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="omnitro（オムニトロ）— コード×ストラムプレートで弾くブラウザ楽器">
+<meta name="twitter:description" content="全108コード×ストラムプレートで演奏できるブラウザ楽器アプリ。リズムマシン・録音・MIDI対応、インストール不要。">
+<meta name="twitter:image" content="https://egoaid.github.io/omnitro/icons/og-image.png">
+
+<!-- ─── PWA ─── -->
+<meta name="theme-color" content="#0d1b2a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="omnitro">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+<!-- ─── 構造化データ（JSON-LD / schema.org） ─── -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "omnitro（オムニトロ）",
+  "alternateName": "omnitro",
+  "description": "コードボタンとストラムプレートで演奏するブラウザ楽器アプリ。全108コード、10種類の音色、58種類のリズムパターン、9種類のドラムキット、録音・MIX STUDIO、PCキーボード／MIDIキーボード演奏に対応。",
+  "url": "https://egoaid.github.io/omnitro/",
+  "image": "https://egoaid.github.io/omnitro/icons/og-image.png",
+  "applicationCategory": "MusicApplication",
+  "operatingSystem": "Any (Web Browser)",
+  "browserRequirements": "Requires JavaScript and the Web Audio API. Google Chrome recommended.",
+  "inLanguage": ["ja", "en"],
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
+  "author": { "@type": "Person", "name": "egoaid" },
+  "copyrightHolder": { "@type": "Person", "name": "egoaid" },
+  "copyrightYear": "2026",
+  "license": "https://github.com/egoaid/omnitro/blob/main/LICENSE",
+  "codeRepository": "https://github.com/egoaid/omnitro"
+}
+</script>
+
+<link rel="stylesheet" href="./css/variables.css?v12">
+<link rel="stylesheet" href="./css/layout.css?v12">
+<link rel="stylesheet" href="./css/chord-strum.css?v12">
+<link rel="stylesheet" href="./css/overlays.css?v12">
+</head>
+<body>
+
+<a id="dl" style="display:none"></a>
+<div id="app">
+
+  <!-- HEADER -->
+  <!-- HEADER: logo / voice / play / rec / settings -->
+  <div id="header">
+    <div class="logo-area">
+      <div class="logo-brand">オムニトロ</div>
+      <div class="logo-model">omnitro</div>
+    </div>
+    <div id="header-voice" class="header-voice-name">omni1</div>
+    <button id="play-btn" class="header-btn play-header-btn" title="Rhythm Play/Stop (Space)">RHYTHM</button>
+    <button id="fill-btn" class="header-btn" title="Fill (B key)" style="display:none;background:#1a1000;border:1px solid #fb923c;color:#fb923c;">FILL</button>
+    <div id="rec-area">
+      <div id="mic-led" title="Mic recording active"></div>
+      <div id="rec-led"></div>
+      <div id="rec-timer">00:00</div>
+      <button id="rec-btn" class="header-btn">REC</button>
+    </div>
+    <div style="width:10px;flex-shrink:0;"></div>
+    <button id="settings-btn" title="Settings" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
+
+  <!-- CHORD + STRUM AREA -->
+  <div id="chord-section">
+
+    <!-- ── SIMPLE MODE (default): コードボタン左・ストラム右 ── -->
+    <div id="simple-play-area" class="active">
+      <div id="simple-chord-wrap">
+        <div id="simple-chord-grid"></div>
+      </div>
+      <div id="simple-strum-wrap">
+        <!-- Instant OFF + chord display -->
+        <div id="instant-off">
+          <div id="chord-display" class="chord-display">──</div>
+          <div id="instant-off-label">■ OFF</div>
+        </div>
+        <div id="strumplate" class="vertical">
+          <div class="strum-octave-markers vertical">
+            <div class="strum-octave"><div class="strum-octave-label">4</div></div>
+            <div class="strum-octave"><div class="strum-octave-label">3</div></div>
+            <div class="strum-octave"><div class="strum-octave-label">2</div></div>
+            <div class="strum-octave"><div class="strum-octave-label">1</div></div>
+          </div>
+          <div class="strum-touch-indicator vertical" id="strum-indicator"></div>
+          <div class="strum-mode-label" id="strum-mode-label"></div>
+          <div class="strum-hint" id="strum-hint"><div class="strum-hint-text">▲▼</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FULL MODE ── -->
+    <div id="full-play-area">
+      <div class="section-label">108 CHORDS &nbsp;↕ ROOT &nbsp;↔ TYPE</div>
+      <div id="chord-grid-wrap">
+        <div id="chord-root-labels"></div>
+        <div id="chord-grid-right">
+          <div id="chord-type-header"></div>
+          <div id="chord-keys"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STRUMPLATE (full mode) -->
+  <div id="strumplate-section">
+    <div class="section-label">STRUMPLATE &nbsp;─ 4 OCTAVES</div>
+    <div id="strumplate-full" class="horizontal">
+      <div class="strum-octave-markers">
+        <div class="strum-octave"><div class="strum-octave-label">OCT 1</div></div>
+        <div class="strum-octave"><div class="strum-octave-label">OCT 2</div></div>
+        <div class="strum-octave"><div class="strum-octave-label">OCT 3</div></div>
+        <div class="strum-octave"><div class="strum-octave-label">OCT 4</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- rhythm-select: hidden, kept for JS reference -->
+  <select id="rhythm-select" style="display:none">
+          <option>chill1</option>
+          <option>chill2</option>
+          <option>chill3</option>
+          <option>chill4</option>
+          <option>chill5</option>
+          <option>chill6</option>
+          <option>chill7</option>
+          <option>chill8</option>
+          <option>hiphop1</option>
+          <option>hiphop2</option>
+          <option>hiphop3</option>
+          <option>hiphop4</option>
+          <option>world1</option>
+          <option>world2</option>
+          <option>world3</option>
+          <option>groove1</option>
+          <option>groove2</option>
+          <option>groove3</option>
+  </select>
+
+</div>
+
+<!-- SETTINGS OVERLAY (full screen) -->
+<div id="settings-overlay">
+  <div id="header" style="flex-shrink:0;">
+    <div class="logo-area">
+      <div class="logo-brand">オムニトロ</div>
+      <div class="logo-model">omnitro</div>
+    </div>
+    <span style="flex:1;font-family:'Orbitron',sans-serif;font-size:9px;color:var(--text-dim);letter-spacing:2px;padding-left:8px;">SETTINGS</span>
+    <span style="font-family:'Orbitron',sans-serif;font-size:9px;color:var(--accent1);letter-spacing:2px;margin-right:8px;">v1.5</span>
+    <button id="close-settings" style="background:#1a2a3a;border:1px solid #2a4a6a;color:var(--accent1);width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
+  </div>
+
+  <div id="settings-panel">
+
+    <div class="settings-group">
+      <div class="settings-group-label">VOICE SELECT (STRUMPLATE)</div>
+      <div class="voice-grid" id="voice-grid"></div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-label">MASTER VOLUME</div>
+      <div class="control-row">
+        <div class="control-label">MASTER</div>
+        <input type="range" id="vol-master" min="0" max="100" value="80">
+        <div class="control-value" id="val-master">80</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-label">STRUMPLATE</div>
+      <div class="control-row">
+        <div class="control-label">STRUM POLY</div>
+        <input type="range" id="ctrl-strum-poly" min="1" max="3" value="2" step="1">
+        <div class="control-value" id="val-strum-poly">2</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">SUSTAIN</div>
+        <input type="range" id="vol-sustain" min="0" max="100" value="60">
+        <div class="control-value" id="val-sustain">60</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">MAIN VOLUME</div>
+        <input type="range" id="vol-main" min="0" max="100" value="80">
+        <div class="control-value" id="val-main">80</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">SUB VOLUME</div>
+        <input type="range" id="vol-sub" min="0" max="100" value="40">
+        <div class="control-value" id="val-sub">40</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-label">RHYTHM</div>
+      <div class="control-row">
+        <div class="control-label">PATTERN</div>
+        <select id="rhythm-select-settings" style="flex:1;background:#0a1828;border:1px solid #1a3a5a;color:var(--accent1);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;border-radius:3px;appearance:none;letter-spacing:1px;cursor:pointer;">
+          <option>lofi01</option>
+          <option>lofi02</option>
+          <option>lofi03</option>
+          <option>lofi04</option>
+          <option>lofi05</option>
+          <option>lofi06</option>
+          <option>lofi07</option>
+          <option>lofi08</option>
+          <option>lofi09</option>
+          <option>lofi10</option>
+          <option>lofi11</option>
+          <option>lofi12</option>
+          <option>jazz01</option>
+          <option>jazz02</option>
+          <option>jazz03</option>
+          <option>jazz04</option>
+          <option>jazz05</option>
+          <option>jazz06</option>
+          <option>hh01</option>
+          <option>hh02</option>
+          <option>hh03</option>
+          <option>hh04</option>
+          <option>hh05</option>
+          <option>hh06</option>
+          <option>world01</option>
+          <option>world02</option>
+          <option>world03</option>
+          <option>world04</option>
+          <option>world05</option>
+          <option>world06</option>
+          <option>groove01</option>
+          <option>groove02</option>
+          <option>groove03</option>
+          <option>groove04</option>
+          <option>groove05</option>
+          <option>groove06</option>
+          <option>ambient01</option>
+          <option>ambient02</option>
+          <option>ambient03</option>
+          <option>ambient04</option>
+        </select>
+      </div>
+      <!-- KIT selector -->
+      <div class="control-row" style="gap:6px;align-items:center;">
+        <div class="control-label">KIT</div>
+        <select id="kit-select-settings" style="flex:1;background:#0a1828;border:1px solid #1a3a5a;color:var(--accent1);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;border-radius:3px;appearance:none;letter-spacing:1px;cursor:pointer;">
+          <optgroup label="── FACTORY ──" style="color:var(--text-dim);">
+            <option value="808">808</option>
+            <option value="909">909</option>
+            <option value="lm1">LM-1</option>
+            <option value="lofi">LOFI</option>
+            <option value="tape">TAPE</option>
+            <option value="jazz">JAZZ</option>
+            <option value="vinyl">VINYL</option>
+            <option value="minimal">MINIMAL</option>
+            <option value="acoustic">ACOUSTIC</option>
+          </optgroup>
+          <optgroup label="── USER ──" id="kit-select-user-opts" style="color:var(--text-dim);"></optgroup>
+        </select>
+      </div>
+      <!-- Editor button -->
+      <div class="control-row">
+        <div class="control-label">EDITOR</div>
+        <button id="open-reditor-btn" style="flex:1;font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:6px 10px;border:1px solid #2a4a8a;background:#0a1428;color:var(--strumglow);">▶ PATTERN</button>
+        <button id="open-kit-editor-btn" style="flex:1;font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:6px 10px;border:1px solid #4a2a8a;background:#0a0818;color:#a78bfa;margin-left:4px;">▶ KIT EDIT</button>
+      </div>
+      <div class="control-row">
+        <div class="control-label">TEMPO</div>
+        <input type="range" id="ctrl-tempo" min="40" max="250" value="80" step="1">
+        <div class="control-value" id="val-tempo">80</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">VOLUME</div>
+        <input type="range" id="vol-rhythm" min="0" max="100" value="80">
+        <div class="control-value" id="val-rhythm">40</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-label">CHORD</div>
+      <div class="control-row">
+        <div class="control-label">VOLUME</div>
+        <input type="range" id="vol-chord" min="0" max="100" value="70">
+        <div class="control-value" id="val-chord">70</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-label">MICROPHONE</div>
+      <div class="toggle-row">
+        <div class="toggle-label">MIC RECORDING</div>
+        <div class="toggle" id="tog-mic-record"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">MIC MONITOR</div>
+        <div class="toggle" id="tog-mic-monitor"></div>
+      </div>
+      <div class="control-row" style="margin-top:6px;">
+        <div class="control-label">MIC LEVEL</div>
+        <input type="range" id="ctrl-mic-level" min="0" max="300" value="100">
+        <div class="control-value" id="val-mic-level">100</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-label">REAL TIME CONTROL</div>
+      <div class="toggle-row">
+        <div class="toggle-label">CHORD MANUAL / AUTO</div>
+        <div class="toggle" id="tog-chord-auto"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">CHORD HOLD</div>
+        <div class="toggle on" id="tog-chord-hold"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">MIDI STRUM MODE</div>
+        <div class="toggle" id="tog-midi-strum"></div>
+      </div>
+
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-label">ARRANGEMENT</div>
+      <div class="toggle-row">
+        <div class="toggle-label">INTRO</div>
+        <div class="toggle" id="tog-intro-enable"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">FILL</div>
+        <div class="toggle on" id="tog-fill-enable"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">ENDING</div>
+        <div class="toggle" id="tog-ending-enable"></div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-label">HELP</div>
+      <button id="open-manual-btn" style="width:100%;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:9px 10px;border:1px solid var(--accent1);background:#1a1400;color:var(--accent1);">📖 MANUAL / 取扱説明書</button>
+    </div>
+
+    <!-- バージョン表記 + 著作権（スクロール末尾。固定フッターにはしない） -->
+    <div class="settings-footer">
+      <div class="settings-version">omnitro v1.5</div>
+      <div class="settings-copyright">© 2026 egoaid</div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- STEP PARAMETER POPUP -->
+<div id="step-param-popup">
+  <div class="spp-title" id="spp-title">STEP — KICK</div>
+  <div class="spp-row">
+    <div class="spp-label">VEL</div>
+    <input type="range" class="spp-slider" id="spp-vel" min="0" max="100" value="80">
+    <div class="spp-val" id="spp-vel-val">80</div>
+  </div>
+  <div class="spp-row">
+    <div class="spp-label">OFFSET</div>
+    <input type="range" class="spp-slider" id="spp-offset" min="-30" max="60" value="0">
+    <div class="spp-val" id="spp-offset-val">0ms</div>
+  </div>
+  <div class="spp-row">
+    <div class="spp-label">PROB</div>
+    <input type="range" class="spp-slider" id="spp-prob" min="0" max="100" value="100">
+    <div class="spp-val" id="spp-prob-val">100%</div>
+  </div>
+  <div class="spp-row" id="spp-ghost-row">
+    <div class="spp-label">GHOST</div>
+    <div class="toggle" id="spp-ghost-tog" style="width:28px;height:14px;"></div>
+    <div class="spp-val" id="spp-ghost-val" style="color:var(--text-dim);">OFF</div>
+  </div>
+  <button class="spp-close" id="spp-close-btn">DONE</button>
+</div>
+
+<!-- RHYTHM EDITOR OVERLAY -->
+<div id="rhythm-editor-overlay">
+  <div class="reditor-header">
+    <div class="reditor-title">▶ RHYTHM EDITOR</div>
+    <button class="reditor-btn" id="reditor-play-btn" style="padding:5px 10px;border-color:var(--accent3);color:var(--accent3);">▶ PLAY</button>
+    <button class="reditor-btn" id="fill-btn-reditor" style="display:none;padding:5px 9px;border-color:#fb923c;color:#fb923c;font-size:8px;" title="Fill (B key)">FILL</button>
+    <button class="reditor-btn" id="reditor-to-kit-btn" style="padding:5px 9px;border-color:#a78bfa;color:#a78bfa;font-size:8px;">KIT ▶</button>
+    <button class="reditor-close" id="reditor-close-btn">✕</button>
+  </div>
+  <div class="reditor-body">
+
+    <!-- Actions: RANDOM/CLEAR/JSON/IMPORT -->
+    <div class="reditor-actions">
+      <button class="reditor-btn" id="reditor-randomize-btn" title="Randomize (C key)" style="border-color:#a78bfa;color:#a78bfa;">★ RANDOM</button>
+      <button class="reditor-btn clear" id="reditor-clear-btn">CLEAR</button>
+      <button class="reditor-btn export" id="reditor-export-btn">↓ JSON</button>
+      <label class="reditor-btn" style="border-color:#fb923c;color:#fb923c;cursor:pointer;">↑ IMPORT<input type="file" id="reditor-import-file" accept=".json" style="display:none;"></label>
+    </div>
+
+    <!-- Kit + Preset selector -->
+    <div class="reditor-grid-section">
+      <!-- KIT dropdown -->
+      <div class="reditor-kit-row" style="margin-bottom:6px;align-items:center;">
+        <div class="reditor-kit-label">KIT</div>
+        <select id="kit-select-reditor" style="flex:1;background:#060e18;border:1px solid #1a3a5a;color:var(--accent1);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;border-radius:3px;appearance:none;letter-spacing:1px;cursor:pointer;">
+          <optgroup label="── FACTORY ──" style="color:var(--text-dim);">
+            <option value="808">808</option>
+            <option value="909">909</option>
+            <option value="lm1">LM-1</option>
+            <option value="lofi">LOFI</option>
+            <option value="tape">TAPE</option>
+            <option value="jazz">JAZZ</option>
+            <option value="vinyl">VINYL</option>
+            <option value="minimal">MINIMAL</option>
+            <option value="acoustic">ACOUSTIC</option>
+          </optgroup>
+          <optgroup label="── USER ──" id="kit-select-reditor-user-opts" style="color:var(--text-dim);"></optgroup>
+        </select>
+      </div>
+      <div class="reditor-kit-row">
+        <div class="reditor-kit-label">PRESET</div>
+        <select id="reditor-preset-sel" style="flex:1;background:#060e18;border:1px solid #1a3a5a;color:var(--accent1);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;border-radius:3px;appearance:none;letter-spacing:1px;cursor:pointer;">
+          <option value="">— select preset —</option>
+          <option>lofi01</option>
+          <option>lofi02</option>
+          <option>lofi03</option>
+          <option>lofi04</option>
+          <option>lofi05</option>
+          <option>lofi06</option>
+          <option>lofi07</option>
+          <option>lofi08</option>
+          <option>lofi09</option>
+          <option>lofi10</option>
+          <option>lofi11</option>
+          <option>lofi12</option>
+          <option>jazz01</option>
+          <option>jazz02</option>
+          <option>jazz03</option>
+          <option>jazz04</option>
+          <option>jazz05</option>
+          <option>jazz06</option>
+          <option>hh01</option>
+          <option>hh02</option>
+          <option>hh03</option>
+          <option>hh04</option>
+          <option>hh05</option>
+          <option>hh06</option>
+          <option>world01</option>
+          <option>world02</option>
+          <option>world03</option>
+          <option>world04</option>
+          <option>world05</option>
+          <option>world06</option>
+          <option>groove01</option>
+          <option>groove02</option>
+          <option>groove03</option>
+          <option>groove04</option>
+          <option>groove05</option>
+          <option>groove06</option>
+          <option>ambient01</option>
+          <option>ambient02</option>
+          <option>ambient03</option>
+          <option>ambient04</option>
+        </select>
+        <button class="reditor-btn load" id="reditor-load-preset-btn" style="flex-shrink:0;">LOAD</button>
+      </div>
+    </div>
+
+    <!-- Piano Roll -->
+    <div class="reditor-grid-section" style="padding:8px 6px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+        <div style="font-size:7px;color:var(--text-dim);letter-spacing:2px;flex-shrink:0;">PIANO ROLL</div>
+        <div style="font-size:7px;color:var(--text-dim);letter-spacing:1px;flex:1;">TAP=追加 &nbsp;ドラッグ=移動/vel &nbsp;ダブルタップ=削除</div>
+      </div>
+      <div id="piano-roll-wrap" style="position:relative;overflow:hidden;border-radius:4px;border:1px solid #1a3a5a;">
+        <canvas id="piano-roll-canvas" style="display:block;touch-action:none;"></canvas>
+      </div>
+      <!-- TEMPO (SWINGの上) -->
+      <div class="reditor-swing-row" style="margin-top:6px;">
+        <div class="reditor-swing-label">TEMPO</div>
+        <input type="range" id="reditor-tempo" min="40" max="250" value="80" step="1" style="flex:1;height:3px;accent-color:var(--accent1);">
+        <div class="reditor-swing-val" id="reditor-tempo-val">80</div>
+      </div>
+      <!-- SWING -->
+      <div class="reditor-swing-row" style="margin-top:4px;">
+        <div class="reditor-swing-label">SWING</div>
+        <input type="range" id="reditor-swing" min="0" max="50" value="0" step="1" style="flex:1;height:3px;accent-color:var(--accent1);">
+        <div class="reditor-swing-val" id="reditor-swing-val">0%</div>
+      </div>
+      <!-- クオンタイズ + APPLY Q + HUMANIZE (SWINGの下) -->
+      <div style="display:flex;align-items:center;gap:3px;margin-top:6px;flex-wrap:wrap;">
+        <div style="font-size:7px;color:var(--text-dim);letter-spacing:1px;margin-right:2px;">Q:</div>
+        <button class="pr-q-btn active" data-q="100" style="font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:1px;border-radius:3px;cursor:pointer;padding:2px 5px;border:1px solid #1a3a5a;background:#0e1c2c;color:var(--text-dim);">100%</button>
+        <button class="pr-q-btn" data-q="50"  style="font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:1px;border-radius:3px;cursor:pointer;padding:2px 5px;border:1px solid #1a3a5a;background:#0e1c2c;color:var(--text-dim);">50%</button>
+        <button class="pr-q-btn" data-q="25"  style="font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:1px;border-radius:3px;cursor:pointer;padding:2px 5px;border:1px solid #1a3a5a;background:#0e1c2c;color:var(--text-dim);">25%</button>
+        <button class="pr-q-btn" data-q="off" style="font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:1px;border-radius:3px;cursor:pointer;padding:2px 5px;border:1px solid #1a3a5a;background:#0e1c2c;color:var(--text-dim);">OFF</button>
+        <button class="reditor-btn" id="reditor-apply-q-btn" style="border-color:#4fc3f7;color:#4fc3f7;font-size:7px;padding:2px 6px;">APPLY Q</button>
+        <button class="reditor-btn" id="reditor-humanize-btn" style="border-color:#f9a825;color:#f9a825;font-size:7px;padding:2px 6px;">HUMANIZE</button>
+      </div>
+    </div>
+
+    <!-- Pattern actions -->
+    <div class="reditor-grid-section">
+      <div class="settings-group-label" style="margin-bottom:8px;">SAVE PATTERN</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <input type="text" id="reditor-pat-name" class="reditor-pat-name-input" placeholder="pattern name…" maxlength="24">
+        <button class="reditor-btn save" id="reditor-save-btn">SAVE</button>
+      </div>
+      <div class="reditor-pat-list" id="reditor-pat-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- KIT EDITOR OVERLAY -->
+<div id="kit-editor-overlay" style="display:none;position:fixed;inset:0;background:linear-gradient(180deg,#0a0f18 0%,#060c14 100%);z-index:210;flex-direction:column;max-width:430px;margin:0 auto;overflow:hidden;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(90deg,#0a0f1a,#111827,#0a0f1a);border-bottom:1px solid #1a3a5a;flex-shrink:0;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--accent1);letter-spacing:2px;flex:1;">▶ KIT EDITOR</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;" id="kit-editor-kitname">808</div>
+    <button id="kit-play-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 10px;border:1px solid var(--accent3);background:#0a1810;color:var(--accent3);">▶ PLAY</button>
+    <button id="fill-btn-kit" style="display:none;font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 9px;border:1px solid #fb923c;background:#1a1000;color:#fb923c;" title="Fill (B key)">FILL</button>
+    <button id="kit-to-reditor-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 9px;border:1px solid var(--accent3);background:#0e1c2c;color:var(--accent3);">RHYTHM ▶</button>
+    <button id="kit-editor-close-btn" style="background:#1a2a3a;border:1px solid #2a4a6a;color:var(--text-dim);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:10px 14px 16px;">
+    <!-- アクション行: RANDOM/RESET/SAVE/JSON/IMPORT (RHYTHM EDITORと同じ位置) -->
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+      <button id="kit-random-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 10px;border:1px solid #a78bfa;background:#0e0818;color:#a78bfa;">★ RANDOM</button>
+      <button id="kit-editor-reset-btn2" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 9px;border:1px solid #5a3a2a;background:#0e1c2c;color:#c08060;">RESET</button>
+      <button id="kit-save-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 10px;border:1px solid var(--accent3);background:#0e1c2c;color:var(--accent3);">SAVE</button>
+      <button id="kit-export-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 10px;border:1px solid #4fc3f7;background:#0e1c2c;color:#4fc3f7;">↓ JSON</button>
+      <label id="kit-import-lbl" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 10px;border:1px solid #fb923c;background:#0e1c2c;color:#fb923c;">↑ IMPORT<input type="file" id="kit-import-file" accept=".json" style="display:none;"></label>
+    </div>
+    <!-- KIT メニュー（他画面のKIT選択と連動） -->
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+      <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;flex-shrink:0;">KIT</div>
+      <select id="kit-select-editor" style="flex:1;background:#060e18;border:1px solid #1a3a5a;color:var(--accent1);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;border-radius:3px;appearance:none;letter-spacing:1px;cursor:pointer;">
+        <optgroup label="── FACTORY ──" style="color:var(--text-dim);">
+          <option value="808">808</option>
+          <option value="909">909</option>
+          <option value="lm1">LM-1</option>
+          <option value="lofi">LOFI</option>
+          <option value="tape">TAPE</option>
+          <option value="jazz">JAZZ</option>
+          <option value="vinyl">VINYL</option>
+          <option value="minimal">MINIMAL</option>
+          <option value="acoustic">ACOUSTIC</option>
+        </optgroup>
+        <optgroup label="── USER ──" id="kit-select-editor-user-opts" style="color:var(--text-dim);"></optgroup>
+      </select>
+    </div>
+    <!-- キット名入力 -->
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+      <input type="text" id="kit-name-input" placeholder="kit name…" maxlength="24"
+        style="flex:1;background:#060e18;border:1px solid #1a3a5a;color:var(--accent1);font-family:'Share Tech Mono',monospace;font-size:9px;padding:5px 7px;border-radius:4px;letter-spacing:1px;">
+      <div style="font-size:8px;color:var(--text-dim);letter-spacing:1px;" id="kit-save-status"></div>
+    </div>
+    <!-- ユーザーキット一覧 -->
+    <div id="kit-user-list" style="display:flex;flex-direction:column;gap:3px;max-height:80px;overflow-y:auto;margin-bottom:10px;"></div>
+    <!-- チャンネルストリップ -->
+    <div id="kit-editor-strips" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+</div>
+
+<!-- MANUAL OVERLAY -->
+<div id="manual-overlay">
+  <div class="manual-header">
+    <div class="manual-title">MANUAL</div>
+    <button class="manual-lang-btn" id="manual-lang-ja" data-lang="ja">日本語</button>
+    <button class="manual-lang-btn" id="manual-lang-en" data-lang="en">ENGLISH</button>
+    <button class="manual-close-btn" id="manual-close-btn">✕</button>
+  </div>
+  <div class="manual-body" id="manual-body"></div>
+</div>
+
+<!-- MIX STUDIO OVERLAY -->
+<div id="mix-studio">
+  <div class="studio-header">
+    <div class="studio-title">▶ MIX STUDIO</div>
+    <button class="studio-close-btn" id="studio-discard-btn" title="Discard recording">✕</button>
+  </div>
+  <div class="studio-body">
+
+    <!-- Transport -->
+    <div class="studio-section">
+      <div class="studio-section-label">PLAYBACK</div>
+      <div class="studio-transport">
+        <button class="studio-btn primary" id="studio-play-btn">▶ PLAY</button>
+        <button class="studio-btn" id="studio-stop-btn">■ STOP</button>
+        <div class="studio-time" id="studio-time">0:00</div>
+        <div class="studio-mem" id="studio-mem"></div>
+      </div>
+      <canvas id="studio-canvas"></canvas>
+      <div class="studio-warn" id="studio-warn">⚠ Long recording: memory usage high</div>
+    </div>
+
+    <!-- Presets -->
+    <div class="studio-section">
+      <div class="studio-section-label">PRESET</div>
+      <div class="preset-row">
+        <div class="preset-btn active" data-preset="flat"  id="preset-flat">FLAT</div>
+        <div class="preset-btn"        data-preset="clean" id="preset-clean">CLEAN</div>
+        <div class="preset-btn"        data-preset="warm"  id="preset-warm">WARM</div>
+        <div class="preset-btn"        data-preset="deep"  id="preset-deep">DEEP</div>
+      </div>
+    </div>
+
+    <!-- Mic Dynamics -->
+    <div class="studio-section" id="vocal-eq-section">
+      <div class="studio-section-label">MIC — DYNAMICS</div>
+      <div class="control-row">
+        <div class="control-label">GAIN</div>
+        <input type="range" id="s-mic-gain" min="-12" max="24" value="0" step="1">
+        <div class="control-value" id="v-mic-gain">0 dB</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">OTT</div>
+        <input type="range" id="s-ott" min="0" max="100" value="0">
+        <div class="control-value" id="v-ott">0</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">DE-ESS</div>
+        <input type="range" id="s-deess" min="0" max="100" value="0">
+        <div class="control-value" id="v-deess">0</div>
+      </div>
+    </div>
+
+    <!-- Bus -->
+    <div class="studio-section">
+      <div class="studio-section-label">MIX BUS</div>
+      <div class="control-row">
+        <div class="control-label">GLUE COMP</div>
+        <input type="range" id="s-glue" min="0" max="100" value="0">
+        <div class="control-value" id="v-glue">0</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">BUS REVERB</div>
+        <input type="range" id="s-bus-rvb" min="0" max="100" value="0">
+        <div class="control-value" id="v-bus-rvb">0</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">RVB SIZE</div>
+        <input type="range" id="s-rvb-size" min="0" max="100" value="45">
+        <div class="control-value" id="v-rvb-size">45</div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">LIMITER</div>
+        <input type="range" id="s-limit" min="-24" max="0" value="-1" step="1">
+        <div class="control-value" id="v-limit">-1 dB</div>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="studio-section">
+      <div class="studio-section-label">EXPORT</div>
+      <div class="export-checks" style="margin-bottom:10px;">
+        <label class="export-check-label"><input type="checkbox" id="chk-mix" checked> MIX.wav</label>
+        <label class="export-check-label"><input type="checkbox" id="chk-vocal"> MIC.wav</label>
+        <label class="export-check-label"><input type="checkbox" id="chk-music"> omni.wav</label>
+        <label class="export-check-label"><input type="checkbox" id="chk-drum"> drum.wav</label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="studio-btn export" id="studio-export-btn">⬇ EXPORT</button>
+        <button class="studio-btn danger" id="studio-discard2-btn">✕ DISCARD</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script src="./js/state.js?v12"></script>
+<script src="./js/music-theory.js?v12"></script>
+<script src="./js/audio-core.js?v12"></script>
+<script src="./js/native-strum-synth.js?v12"></script>
+<script src="./js/voice-defs.js?v12"></script>
+<script src="./js/rhythm-patterns.js?v12"></script>
+<script src="./js/drum-synth-lm1.js?v12"></script>
+<script src="./js/drum-kits.js?v12"></script>
+<script src="./js/rhythm-scheduler.js?v12"></script>
+<script src="./js/chord-playback.js?v12"></script>
+<script src="./js/strumplate-core.js?v12"></script>
+<script src="./js/chord-ui.js?v12"></script>
+<script src="./js/strumplate-ui.js?v12"></script>
+<script src="./js/settings-ui.js?v12"></script>
+<script src="./js/rhythm-ui.js?v12"></script>
+<script src="./js/rhythm-editor.js?v12"></script>
+<script src="./js/piano-roll.js?v12"></script>
+<script src="./js/recording.js?v12"></script>
+<script src="./js/mix-studio.js?v12"></script>
+<script src="./js/kit-editor.js?v12"></script>
+<script src="./js/midi.js?v12"></script>
+<script src="./js/manual-content.js?v12"></script>
+<script src="./js/manual-ui.js?v12"></script>
+<script src="./js/arrangement.js?v12"></script>
+<script src="./js/main.js?v12"></script>
+</body>
+</html>
