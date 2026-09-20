@@ -32,6 +32,7 @@
 - **PCキーボード演奏** — マウス操作に加え、キーボードでもコードボタンを演奏可能。ライブ演奏中に便利なショートカットも用意しています（<kbd>Space</kbd>：RHYTHM開始/停止、<kbd>B</kbd>：FILL発動、<kbd>C</kbd>：RANDOM発動）
 - **MIDI対応** — MIDIキーボードでの演奏に対応。「MIDI STRUM MODE」ONで、鍵盤演奏を現在選択中のコードの音だけに強制マッピングし、ストラムプレートをそのまま鍵盤で弾けます（※Safari／iPhone・iPadは非対応。後述）
 - **PWA対応** — ホーム画面に追加してアプリのように利用可能（オフライン対応）
+- **画面スリープ抑制** — 演奏中にスマートフォンの画面が自動でスリープしないよう抑制します（対応ブラウザのみ）
 - **日本語 / English** — アプリ内マニュアルは日英切り替え対応
 
 アプリ内の「📖 MANUAL」ボタンから、詳しい取扱説明書（日本語/English）を開けます。使い方に迷ったら、まずはこちらをご覧ください。
@@ -91,6 +92,7 @@
 - **PC keyboard play** — play chord buttons from your keyboard, not just the mouse. Handy shortcuts for live playing too (<kbd>Space</kbd>: start/stop RHYTHM, <kbd>B</kbd>: trigger FILL, <kbd>C</kbd>: trigger RANDOM)
 - **MIDI support** — play from a MIDI keyboard; turn on "MIDI STRUM MODE" to force every note into the currently selected chord's strumplate layout, effectively playing the strumplate from your MIDI keyboard (*not supported on Safari/iPhone/iPad — see below*)
 - **PWA-ready** — installable, works offline after first load
+- **Screen sleep prevention** — keeps your phone's screen from auto-locking while you play (supported browsers only)
 - **Japanese / English** — the in-app manual switches between both languages
 
 Open the in-app manual anytime from the "📖 MANUAL" button in Settings — it's the best place to start if you're not sure how something works.

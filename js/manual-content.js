@@ -365,6 +365,7 @@ const MANUAL_SECTIONS = [
         <tr><td>録音</td><td>最大10分。演奏(OMNI)／ドラム／マイク(VOCAL)を個別ステムで同時録音</td></tr>
         <tr><td>書き出し形式</td><td>WAV（16bit PCM）。MIX / VOCAL / omni / drum を個別に書き出し可能</td></tr>
         <tr><td>MIX STUDIOエフェクト</td><td>HPF、OTT（マルチバンド）、DE-ESS、GLUE COMP、BUS REVERB、LIMITER、4種プリセット</td></tr>
+        <tr><td>画面スリープ抑制</td><td>Screen Wake Lock API対応。アプリを操作すると画面の自動スリープを抑制する（対応ブラウザ・HTTPS環境のみ）</td></tr>
         <tr><td>オーディオエンジン</td><td>Web Audio API（ネイティブ） + Tone.js v14.8.49</td></tr>
         <tr><td>データ保存</td><td>ユーザーパターン／キットはブラウザのlocalStorageに保存（端末・ブラウザ単位）</td></tr>
         <tr><td>推奨環境</td><td>Google Chrome（デスクトップ／モバイル）</td></tr>
@@ -385,6 +386,7 @@ const MANUAL_SECTIONS = [
         <tr><td>Recording</td><td>Up to 10 minutes; instrument (OMNI), drums and mic (VOCAL) captured as separate stems simultaneously</td></tr>
         <tr><td>Export format</td><td>WAV (16-bit PCM); MIX / VOCAL / omni / drum can each be exported individually</td></tr>
         <tr><td>Mix Studio effects</td><td>HPF, OTT (multiband dynamics), DE-ESS, GLUE COMP, BUS REVERB, LIMITER, 4 presets</td></tr>
+        <tr><td>Screen sleep prevention</td><td>Uses the Screen Wake Lock API to keep the screen from auto-locking while you're using the app (supported browsers over HTTPS only)</td></tr>
         <tr><td>Audio engine</td><td>Native Web Audio API + Tone.js v14.8.49</td></tr>
         <tr><td>Data storage</td><td>User patterns/kits are saved in the browser's localStorage (per device/browser)</td></tr>
         <tr><td>Recommended browser</td><td>Google Chrome (desktop or mobile)</td></tr>
