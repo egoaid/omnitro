@@ -1,3 +1,19 @@
+  /* KIT EDITOR オーバーレイの430px幅制約はindex.htmlのインラインstyleから
+     ここへ移設した（LAYOUT MODEのCSS側で!importantを使わずに上書きできる
+     ようにするため。他のオーバーレイと同じ扱いに揃えている）。 */
+  #kit-editor-overlay {
+    max-width: 430px;
+    margin: 0 auto;
+  }
+  /* チャンネルストリップのコンテナ。以前はindex.htmlのインラインstyleで
+     display:flex;flex-direction:columnを指定していたが、LAYOUT MODEで
+     display:gridへ切り替えられるよう通常のCSSへ移設した（挙動は同一）。 */
+  #kit-editor-strips {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   /* ─── SETTINGS PANEL (FULL SCREEN) ─── */
   #settings-overlay {
     display: none;

@@ -19,5 +19,6 @@ const state = {
   tremoloRate: 5.0,   // Hz
   tremoloDepth: 0.7,  // 深め（0=なし、1=最大）
   midiStrumMode: false, // false=通常の半音階演奏 / true=MIDIノートをストラムプレートの音配列に強制マッピング
+  layoutMode: 'standard', // 'standard' | 'tablet-landscape' | 'desktop-fullscreen'（js/layout-mode.jsが管理）
 };
 

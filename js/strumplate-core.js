@@ -3,6 +3,36 @@ function triggerSubAttackRelease(note, velocity = 0.6, duration = 0.75) {
   try { subSynth.triggerAttackRelease(note, duration, Tone.now(), velocity); } catch (e) {}
 }
 
+// ─── フラッシュDOM要素プール ───────────────────────────────────────────────────
+// 高速ストラム中に note-flash div を毎回 createElement → 400ms後にremove()
+// していると、iPadなど非力な端末ではDOM挿入/削除・レイアウト・GCの負荷が
+// 積み重なって描画スレッドを圧迫する（strumplate-ui.jsのspawnFlashColoredも
+// 同じ問題を持つため、ここに共通のプールを用意して両方から使う）。
+// 固定数の要素を使い回し、CSSアニメーションはリフローで強制的に再スタート
+// する（見た目・アニメーション自体は元の実装と完全に同一）。
+const FLASH_POOL_SIZE = 10;
+const _flashPool = [];
+let _flashPoolIdx = 0;
+
+function _acquireFlashEl(sp) {
+  let el;
+  if (_flashPool.length < FLASH_POOL_SIZE) {
+    el = document.createElement('div');
+    sp.appendChild(el);
+    _flashPool.push(el);
+  } else {
+    el = _flashPool[_flashPoolIdx];
+    _flashPoolIdx = (_flashPoolIdx + 1) % FLASH_POOL_SIZE;
+  }
+  el.className = ''; // アニメーションを一旦解除してから呼び出し側でスタイル設定
+  return el;
+}
+
+function _playFlash(el) {
+  void el.offsetWidth; // リフロー強制でアニメーションを確実に先頭から再生
+  el.className = 'note-flash';
+}
+
 function getNoteAtPos(clientPos, rect) {
   // vertical strumplate: use Y axis (top=high, bottom=low)
   const isVertical = document.getElementById('strumplate').classList.contains('vertical');
@@ -17,12 +47,12 @@ function getNoteAtPos(clientPos, rect) {
 
 function spawnFlash(x, y, rect) {
   const sp = document.getElementById('strumplate');
-  const dot = document.createElement('div');
-  dot.className = 'note-flash';
+  const dot = _acquireFlashEl(sp);
+  dot.style.background = '';
+  dot.style.boxShadow = '';
   dot.style.left = x + 'px';
   dot.style.top = (Math.random() * rect.height * 0.7 + rect.height * 0.15) + 'px';
-  sp.appendChild(dot);
-  setTimeout(() => dot.remove(), 400);
+  _playFlash(dot);
 }
 
 async function strumSlide(pos, rect) {

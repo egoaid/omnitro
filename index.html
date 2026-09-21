@@ -64,12 +64,13 @@
 }
 </script>
 
-<link rel="stylesheet" href="./css/variables.css?v13">
-<link rel="stylesheet" href="./css/layout.css?v13">
-<link rel="stylesheet" href="./css/chord-strum.css?v13">
-<link rel="stylesheet" href="./css/overlays.css?v13">
+<link rel="stylesheet" href="./css/variables.css?v14">
+<link rel="stylesheet" href="./css/layout.css?v14">
+<link rel="stylesheet" href="./css/chord-strum.css?v14">
+<link rel="stylesheet" href="./css/overlays.css?v14">
+<link rel="stylesheet" href="./css/layout-modes.css?v14">
 </head>
-<body>
+<body class="layout-standard">
 
 <a id="dl" style="display:none"></a>
 <div id="app">
@@ -368,13 +369,23 @@
     </div>
 
     <div class="settings-group">
+      <div class="settings-group-label">LAYOUT MODE</div>
+      <div class="layout-mode-grid">
+        <button class="layout-mode-btn" data-layout-mode="standard">STANDARD</button>
+        <button class="layout-mode-btn" data-layout-mode="tablet-landscape">TABLET LANDSCAPE</button>
+        <button class="layout-mode-btn" data-layout-mode="desktop-fullscreen">DESKTOP FULLSCREEN</button>
+      </div>
+    </div>
+
+    <div class="settings-group">
       <div class="settings-group-label">HELP</div>
-      <button id="open-manual-btn" style="width:100%;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:9px 10px;border:1px solid var(--accent1);background:#1a1400;color:var(--accent1);">📖 MANUAL / 取扱説明書</button>
+      <button id="open-manual-btn" style="width:100%;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:9px 10px;border:1px solid var(--accent1);background:#1a1400;color:var(--accent1);margin-bottom:6px;">📖 MANUAL / 取扱説明書</button>
+      <button id="open-perf-monitor-btn" style="width:100%;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:9px 10px;border:1px solid #4fc3f7;background:#0a1828;color:#4fc3f7;">📊 PERFORMANCE MONITOR</button>
     </div>
 
     <!-- バージョン表記 + 著作権（スクロール末尾。固定フッターにはしない） -->
     <div class="settings-footer">
-      <div class="settings-version">omnitro v1.5</div>
+      <div class="settings-version">omnitro v1.5.14</div>
       <div class="settings-copyright">© 2026 egoaid</div>
     </div>
 
@@ -428,7 +439,7 @@
     </div>
 
     <!-- Kit + Preset selector -->
-    <div class="reditor-grid-section">
+    <div class="reditor-grid-section" id="reditor-kitpreset-section">
       <!-- KIT dropdown -->
       <div class="reditor-kit-row" style="margin-bottom:6px;align-items:center;">
         <div class="reditor-kit-label">KIT</div>
@@ -497,7 +508,7 @@
     </div>
 
     <!-- Piano Roll -->
-    <div class="reditor-grid-section" style="padding:8px 6px;">
+    <div class="reditor-grid-section" id="reditor-pianoroll-section" style="padding:8px 6px;">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
         <div style="font-size:7px;color:var(--text-dim);letter-spacing:2px;flex-shrink:0;">PIANO ROLL</div>
         <div style="font-size:7px;color:var(--text-dim);letter-spacing:1px;flex:1;">TAP=追加 &nbsp;ドラッグ=移動/vel &nbsp;ダブルタップ=削除</div>
@@ -530,7 +541,7 @@
     </div>
 
     <!-- Pattern actions -->
-    <div class="reditor-grid-section">
+    <div class="reditor-grid-section" id="reditor-savepattern-section">
       <div class="settings-group-label" style="margin-bottom:8px;">SAVE PATTERN</div>
       <div style="display:flex;gap:6px;margin-bottom:8px;">
         <input type="text" id="reditor-pat-name" class="reditor-pat-name-input" placeholder="pattern name…" maxlength="24">
@@ -543,7 +554,7 @@
 </div>
 
 <!-- KIT EDITOR OVERLAY -->
-<div id="kit-editor-overlay" style="display:none;position:fixed;inset:0;background:linear-gradient(180deg,#0a0f18 0%,#060c14 100%);z-index:210;flex-direction:column;max-width:430px;margin:0 auto;overflow:hidden;">
+<div id="kit-editor-overlay" style="display:none;position:fixed;inset:0;background:linear-gradient(180deg,#0a0f18 0%,#060c14 100%);z-index:210;flex-direction:column;overflow:hidden;">
   <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(90deg,#0a0f1a,#111827,#0a0f1a);border-bottom:1px solid #1a3a5a;flex-shrink:0;">
     <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--accent1);letter-spacing:2px;flex:1;">▶ KIT EDITOR</div>
     <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;" id="kit-editor-kitname">808</div>
@@ -552,7 +563,7 @@
     <button id="kit-to-reditor-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 9px;border:1px solid var(--accent3);background:#0e1c2c;color:var(--accent3);">RHYTHM ▶</button>
     <button id="kit-editor-close-btn" style="background:#1a2a3a;border:1px solid #2a4a6a;color:var(--text-dim);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
   </div>
-  <div style="flex:1;overflow-y:auto;padding:10px 14px 16px;">
+  <div id="kit-editor-body" style="flex:1;overflow-y:auto;padding:10px 14px 16px;">
     <!-- アクション行: RANDOM/RESET/SAVE/JSON/IMPORT (RHYTHM EDITORと同じ位置) -->
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
       <button id="kit-random-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 10px;border:1px solid #a78bfa;background:#0e0818;color:#a78bfa;">★ RANDOM</button>
@@ -588,7 +599,7 @@
     <!-- ユーザーキット一覧 -->
     <div id="kit-user-list" style="display:flex;flex-direction:column;gap:3px;max-height:80px;overflow-y:auto;margin-bottom:10px;"></div>
     <!-- チャンネルストリップ -->
-    <div id="kit-editor-strips" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div id="kit-editor-strips"></div>
   </div>
 </div>
 
@@ -612,7 +623,7 @@
   <div class="studio-body">
 
     <!-- Transport -->
-    <div class="studio-section">
+    <div class="studio-section" id="studio-section-playback">
       <div class="studio-section-label">PLAYBACK</div>
       <div class="studio-transport">
         <button class="studio-btn primary" id="studio-play-btn">▶ PLAY</button>
@@ -625,7 +636,7 @@
     </div>
 
     <!-- Presets -->
-    <div class="studio-section">
+    <div class="studio-section" id="studio-section-preset">
       <div class="studio-section-label">PRESET</div>
       <div class="preset-row">
         <div class="preset-btn active" data-preset="flat"  id="preset-flat">FLAT</div>
@@ -656,7 +667,7 @@
     </div>
 
     <!-- Bus -->
-    <div class="studio-section">
+    <div class="studio-section" id="studio-section-bus">
       <div class="studio-section-label">MIX BUS</div>
       <div class="control-row">
         <div class="control-label">GLUE COMP</div>
@@ -681,7 +692,7 @@
     </div>
 
     <!-- Export -->
-    <div class="studio-section">
+    <div class="studio-section" id="studio-section-export">
       <div class="studio-section-label">EXPORT</div>
       <div class="export-checks" style="margin-bottom:10px;">
         <label class="export-check-label"><input type="checkbox" id="chk-mix" checked> MIX.wav</label>
@@ -700,31 +711,33 @@
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-<script src="./js/state.js?v13"></script>
-<script src="./js/music-theory.js?v13"></script>
-<script src="./js/audio-core.js?v13"></script>
-<script src="./js/native-strum-synth.js?v13"></script>
-<script src="./js/voice-defs.js?v13"></script>
-<script src="./js/rhythm-patterns.js?v13"></script>
-<script src="./js/drum-synth-lm1.js?v13"></script>
-<script src="./js/drum-kits.js?v13"></script>
-<script src="./js/rhythm-scheduler.js?v13"></script>
-<script src="./js/chord-playback.js?v13"></script>
-<script src="./js/strumplate-core.js?v13"></script>
-<script src="./js/chord-ui.js?v13"></script>
-<script src="./js/strumplate-ui.js?v13"></script>
-<script src="./js/settings-ui.js?v13"></script>
-<script src="./js/rhythm-ui.js?v13"></script>
-<script src="./js/rhythm-editor.js?v13"></script>
-<script src="./js/piano-roll.js?v13"></script>
-<script src="./js/recording.js?v13"></script>
-<script src="./js/mix-studio.js?v13"></script>
-<script src="./js/kit-editor.js?v13"></script>
-<script src="./js/midi.js?v13"></script>
-<script src="./js/manual-content.js?v13"></script>
-<script src="./js/manual-ui.js?v13"></script>
-<script src="./js/arrangement.js?v13"></script>
-<script src="./js/wake-lock.js?v13"></script>
-<script src="./js/main.js?v13"></script>
+<script src="./js/state.js?v14"></script>
+<script src="./js/layout-mode.js?v14"></script>
+<script src="./js/perf-diagnostics.js?v14"></script>
+<script src="./js/music-theory.js?v14"></script>
+<script src="./js/audio-core.js?v14"></script>
+<script src="./js/native-strum-synth.js?v14"></script>
+<script src="./js/voice-defs.js?v14"></script>
+<script src="./js/rhythm-patterns.js?v14"></script>
+<script src="./js/drum-synth-lm1.js?v14"></script>
+<script src="./js/drum-kits.js?v14"></script>
+<script src="./js/rhythm-scheduler.js?v14"></script>
+<script src="./js/chord-playback.js?v14"></script>
+<script src="./js/strumplate-core.js?v14"></script>
+<script src="./js/chord-ui.js?v14"></script>
+<script src="./js/strumplate-ui.js?v14"></script>
+<script src="./js/settings-ui.js?v14"></script>
+<script src="./js/rhythm-ui.js?v14"></script>
+<script src="./js/rhythm-editor.js?v14"></script>
+<script src="./js/piano-roll.js?v14"></script>
+<script src="./js/recording.js?v14"></script>
+<script src="./js/mix-studio.js?v14"></script>
+<script src="./js/kit-editor.js?v14"></script>
+<script src="./js/midi.js?v14"></script>
+<script src="./js/manual-content.js?v14"></script>
+<script src="./js/manual-ui.js?v14"></script>
+<script src="./js/arrangement.js?v14"></script>
+<script src="./js/wake-lock.js?v14"></script>
+<script src="./js/main.js?v14"></script>
 </body>
 </html>

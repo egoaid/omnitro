@@ -2,7 +2,7 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-console.log('%c[omnitro] build: v1.5.13 — Screen Wake Lock APIによる画面スリープ抑制を追加', 'color:#2ecc71;font-weight:bold;');
+console.log('%c[omnitro] build: v1.5.14 — LAYOUT MODE（STANDARD/TABLET LANDSCAPE/DESKTOP FULLSCREEN）とストラムプレートのAudioパフォーマンス最適化・診断モニターを追加', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();
@@ -23,6 +23,8 @@ setupMidi();
 setupManual();
 setupArrangementUI();
 setupWakeLock();
+setupLayoutMode();
+setupPerfMonitor();
 
 // 起動時に最初のプリセットをロード（editorStateとselectを初期化）
 loadPatternByName('lofi01');

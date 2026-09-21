@@ -140,10 +140,11 @@ function setupStrumplate() {
   }
 
   // 色付きフラッシュを生成（spawnFlashの拡張版）
+  // ── パフォーマンス: DOM要素はstrumplate-core.jsの共有プールを再利用する
+  //    （高速ストラム/マルチタッチ時のDOM生成・破棄churnを削減）。
   function spawnFlashColored(pos, colorIdx) {
     const c = FINGER_COLORS[colorIdx] || FINGER_COLORS[0];
-    const dot = document.createElement('div');
-    dot.className = 'note-flash';
+    const dot = _acquireFlashEl(sp);
     dot.style.background = `rgba(${c.rgb},0.9)`;
     dot.style.boxShadow = `0 0 8px rgba(${c.rgb},1), 0 0 20px rgba(${c.rgb},0.5)`;
     const isVertical = sp.classList.contains('vertical');
@@ -154,8 +155,7 @@ function setupStrumplate() {
       dot.style.left = pos + 'px';
       dot.style.top  = (rect.height * 0.5) + 'px';
     }
-    sp.appendChild(dot);
-    setTimeout(() => dot.remove(), 400);
+    _playFlash(dot);
   }
 
   function playAtPos(pos, velocity, colorIdx, finger) {

@@ -1,0 +1,220 @@
+/* ─── LAYOUT MODE ─────────────────────────────────────────────────────────────
+   STANDARDモード（body.layout-standard）は既存レイアウトのままのため、この
+   ファイルには一切ルールを追加していない（js/layout-mode.js参照）。
+   TABLET LANDSCAPEとDESKTOP FULLSCREENのみ、ここでスコープ付きに上書きする。
+   いずれもJS側のロジック・DOM構造・イベントハンドラーには触れず、CSSの
+   再レイアウトのみで実現している。
+────────────────────────────────────────────────────────────────────────── */
+
+/* ── SETTINGS内のLAYOUT MODE切り替えボタン ── */
+.layout-mode-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.layout-mode-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 9px 10px;
+  border: 1px solid #1a3a5a;
+  background: #0e1c2c;
+  color: var(--text-dim);
+  text-align: left;
+  transition: all 0.12s;
+}
+.layout-mode-btn.active {
+  border-color: var(--strumglow);
+  color: var(--strumglow);
+  background: #001424;
+  box-shadow: 0 0 6px rgba(79,195,247,0.3);
+}
+.layout-mode-btn::before { content: '○  '; }
+.layout-mode-btn.active::before { content: '●  '; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   共通: TABLET LANDSCAPE / DESKTOP FULLSCREEN の両方に効くワイド化ルール
+   （#appとオーバーレイ群のmax-width:430px制約を解除する）
+   ══════════════════════════════════════════════════════════════════════════ */
+body.layout-tablet-landscape #app,
+body.layout-desktop-fullscreen #app {
+  max-width: none;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+}
+
+body.layout-tablet-landscape #settings-overlay,
+body.layout-tablet-landscape #rhythm-editor-overlay,
+body.layout-tablet-landscape #kit-editor-overlay,
+body.layout-tablet-landscape #mix-studio,
+body.layout-tablet-landscape #manual-overlay {
+  max-width: min(820px, 96vw) !important;
+  margin: 0 auto !important;
+}
+
+body.layout-desktop-fullscreen #settings-overlay,
+body.layout-desktop-fullscreen #rhythm-editor-overlay,
+body.layout-desktop-fullscreen #kit-editor-overlay,
+body.layout-desktop-fullscreen #mix-studio,
+body.layout-desktop-fullscreen #manual-overlay {
+  max-width: min(1200px, 94vw) !important;
+  margin: 0 auto !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TABLET LANDSCAPE 専用: STRUM PLATE（メイン演奏画面）
+   layout-ipad.jpg 参考: 左に12ルート×3タイプのコードグリッド、
+   右に縦型ストラムプレートを幅を絞って全高配置。
+   ══════════════════════════════════════════════════════════════════════════ */
+body.layout-tablet-landscape #simple-play-area {
+  gap: 10px;
+}
+
+body.layout-tablet-landscape #simple-chord-wrap {
+  flex: 1;
+}
+
+/* ストラムプレートは画面右側に固定幅で配置し、演奏しやすい縦長ストリップにする */
+body.layout-tablet-landscape #simple-strum-wrap {
+  flex: 0 0 clamp(120px, 16vw, 220px);
+}
+
+/* コードグリッドを「12列(ルート) × 3行(タイプ)」に転置する。
+   JSが生成するDOM順は root0[maj,min,7th], root1[maj,min,7th], ... のままで、
+   grid-auto-flow:column によって見た目だけを転置する
+   （行 = MAJ / MIN / 7th、列 = 12ルート）。
+   各セル内のテキストは通常のflexレイアウトのままなので回転しない。 */
+body.layout-tablet-landscape #simple-chord-grid {
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  grid-auto-flow: column;
+}
+
+body.layout-tablet-landscape .simple-key {
+  flex-direction: row;
+  gap: 4px;
+}
+body.layout-tablet-landscape .simple-key-root {
+  font-size: 13px;
+}
+body.layout-tablet-landscape .simple-key-type {
+  font-size: 8px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DESKTOP FULLSCREEN 専用: STRUM PLATE
+   タブレットの「手持ち横向き」前提のコード転置は行わず（マウス/キーボード
+   操作が主体のため）、既存の縦12行×3列レイアウトのまま、広い画面全体を
+   使って余裕を持ったサイズで中央に表示する。
+   ══════════════════════════════════════════════════════════════════════════ */
+body.layout-desktop-fullscreen #chord-section {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+body.layout-desktop-fullscreen #simple-play-area {
+  gap: 16px;
+}
+body.layout-desktop-fullscreen #simple-strum-wrap {
+  flex: 0 0 clamp(160px, 22vw, 320px);
+}
+body.layout-desktop-fullscreen .simple-key-root {
+  font-size: 15px;
+}
+body.layout-desktop-fullscreen .simple-key-type {
+  font-size: 10px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SETTINGS: 横長画面では2カラムのCSS Gridに再配置する。
+   通常のスクロールコンテナ内でのgridなので、column-count系のように
+   コンテナ高さに応じたページネーションは発生せず、内容量に応じて
+   行が増えるだけ（安全）。フッターのみ全幅にまたぐ。
+   ══════════════════════════════════════════════════════════════════════════ */
+body.layout-tablet-landscape #settings-panel,
+body.layout-desktop-fullscreen #settings-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 20px;
+  align-content: start;
+}
+body.layout-desktop-fullscreen #settings-panel {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+body.layout-tablet-landscape .settings-group,
+body.layout-desktop-fullscreen .settings-group {
+  min-width: 0;
+}
+body.layout-tablet-landscape .settings-footer,
+body.layout-desktop-fullscreen .settings-footer {
+  grid-column: 1 / -1;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RHYTHM EDITOR: KIT/PRESET選択とSAVE PATTERNを左右2カラムに、
+   ピアノロール（演奏・編集の主役）は常に全幅を確保する。
+   ══════════════════════════════════════════════════════════════════════════ */
+body.layout-tablet-landscape .reditor-body,
+body.layout-desktop-fullscreen .reditor-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: start;
+}
+body.layout-tablet-landscape .reditor-actions,
+body.layout-desktop-fullscreen .reditor-actions,
+body.layout-tablet-landscape #reditor-pianoroll-section,
+body.layout-desktop-fullscreen #reditor-pianoroll-section {
+  grid-column: 1 / -1;
+}
+/* ピアノロールに横幅の余裕ができるため、キャンバスの高さも少し広げて見やすくする
+   （js/layout-mode.jsのprResize()呼び出しで幅は自動再計算される） */
+body.layout-tablet-landscape #piano-roll-wrap,
+body.layout-desktop-fullscreen #piano-roll-wrap {
+  max-width: 100%;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   KIT EDITOR: チャンネルストリップ（KICK/SNARE/...の9枚）を
+   横長画面ではグリッドで並べ、1枚ずつ縦に長く続くスクロールを解消する。
+   ══════════════════════════════════════════════════════════════════════════ */
+body.layout-tablet-landscape #kit-editor-strips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+body.layout-desktop-fullscreen #kit-editor-strips {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MIX STUDIO: PLAYBACK波形とEXPORTは全幅、PRESET/MIC DYNAMICS/MIX BUSは
+   2カラムに並べて縦スクロール量を減らす。
+   ══════════════════════════════════════════════════════════════════════════ */
+body.layout-tablet-landscape .studio-body,
+body.layout-desktop-fullscreen .studio-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: start;
+}
+body.layout-tablet-landscape #studio-section-playback,
+body.layout-desktop-fullscreen #studio-section-playback,
+body.layout-tablet-landscape #studio-section-export,
+body.layout-desktop-fullscreen #studio-section-export {
+  grid-column: 1 / -1;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DESKTOP FULLSCREEN: ヘッダーとオーバーレイヘッダーに少し余裕を持たせる
+   （デスクトップの太いポインタ/マウス操作を想定した最低限の調整のみ）
+   ══════════════════════════════════════════════════════════════════════════ */
+body.layout-desktop-fullscreen #header {
+  padding-left: max(10px, calc((100vw - 1400px) / 2));
+  padding-right: max(10px, calc((100vw - 1400px) / 2));
+}
