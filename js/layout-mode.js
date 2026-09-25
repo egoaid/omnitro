@@ -48,6 +48,24 @@ function _notifyLayoutResize() {
   }
 }
 
+// ── DESKTOP FULLSCREEN専用: ダッシュボードの各タイルを事前初期化 ────────────
+// RHYTHM EDITOR / KIT EDITORは通常「開くボタン」を押した瞬間に初めて
+// ピアノロールのcanvas初期化・チャンネルストリップ構築が走る設計になって
+// いる。DESKTOP FULLSCREENではこれらのタイルがボタン操作なしで最初から
+// 常時表示されるため、既存のopenRhythmEditor()/openKitEditor()自体を
+// そのまま呼び出して同じ初期化を行わせる（内部ロジックの複製はしない）。
+// どちらの関数も内部でaudioContextの起動（ensureAudio）は行わないため、
+// ユーザー操作前に呼んでも安全（音を鳴らすボタンは押されたときに個別で
+// ensureAudio()する設計になっている）。両関数とも複数回呼んでも安全
+// （innerHTML再構築・null チェック済みのcanvas初期化ガードを持つ）。
+// MIX STUDIOは録音データが無い状態で開くとalert()が出る設計のため、
+// ここでは呼び出さず、録音後に既存のrecStop()→openMixStudio()の流れに
+// 任せる（パネル自体は常時表示済みなので、録音後は自動的に中身が入る）。
+function _initDashboardPanels() {
+  try { if (typeof openRhythmEditor === 'function') openRhythmEditor(); } catch (e) {}
+  try { if (typeof openKitEditor === 'function') openKitEditor(); } catch (e) {}
+}
+
 async function _applyFullscreenForMode(mode) {
   const el = document.documentElement;
   try {
@@ -82,6 +100,7 @@ function setLayoutMode(mode, opts) {
   });
 
   if (!opts.skipFullscreen) _applyFullscreenForMode(mode);
+  if (mode === 'desktop-fullscreen') _initDashboardPanels();
   _notifyLayoutResize();
 }
 

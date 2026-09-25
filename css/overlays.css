@@ -2,9 +2,20 @@
      ここへ移設した（LAYOUT MODEのCSS側で!importantを使わずに上書きできる
      ようにするため。他のオーバーレイと同じ扱いに揃えている）。 */
   #kit-editor-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, #0a0f18 0%, #060c14 100%);
+    z-index: 210;
+    flex-direction: column;
+    overflow: hidden;
     max-width: 430px;
     margin: 0 auto;
   }
+  /* KIT EDITORの開閉は kit-editor.js が overlay.style.display を直接
+     'flex'/'none' に書き換えて行っている（他の3オーバーレイのような
+     .openクラス切り替えではない）ため、上のdisplay:noneはJSに委ねる
+     baseline（初期状態）としてのみ機能する。 */
   /* チャンネルストリップのコンテナ。以前はindex.htmlのインラインstyleで
      display:flex;flex-direction:columnを指定していたが、LAYOUT MODEで
      display:gridへ切り替えられるよう通常のCSSへ移設した（挙動は同一）。 */

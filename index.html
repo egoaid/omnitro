@@ -64,11 +64,11 @@
 }
 </script>
 
-<link rel="stylesheet" href="./css/variables.css?v14">
-<link rel="stylesheet" href="./css/layout.css?v14">
-<link rel="stylesheet" href="./css/chord-strum.css?v14">
-<link rel="stylesheet" href="./css/overlays.css?v14">
-<link rel="stylesheet" href="./css/layout-modes.css?v14">
+<link rel="stylesheet" href="./css/variables.css?v19">
+<link rel="stylesheet" href="./css/layout.css?v19">
+<link rel="stylesheet" href="./css/chord-strum.css?v19">
+<link rel="stylesheet" href="./css/overlays.css?v19">
+<link rel="stylesheet" href="./css/layout-modes.css?v19">
 </head>
 <body class="layout-standard">
 
@@ -385,7 +385,7 @@
 
     <!-- バージョン表記 + 著作権（スクロール末尾。固定フッターにはしない） -->
     <div class="settings-footer">
-      <div class="settings-version">omnitro v1.5.14</div>
+      <div class="settings-version">omnitro v1.5.19</div>
       <div class="settings-copyright">© 2026 egoaid</div>
     </div>
 
@@ -554,7 +554,7 @@
 </div>
 
 <!-- KIT EDITOR OVERLAY -->
-<div id="kit-editor-overlay" style="display:none;position:fixed;inset:0;background:linear-gradient(180deg,#0a0f18 0%,#060c14 100%);z-index:210;flex-direction:column;overflow:hidden;">
+<div id="kit-editor-overlay">
   <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(90deg,#0a0f1a,#111827,#0a0f1a);border-bottom:1px solid #1a3a5a;flex-shrink:0;">
     <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--accent1);letter-spacing:2px;flex:1;">▶ KIT EDITOR</div>
     <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;" id="kit-editor-kitname">808</div>
@@ -565,7 +565,7 @@
   </div>
   <div id="kit-editor-body" style="flex:1;overflow-y:auto;padding:10px 14px 16px;">
     <!-- アクション行: RANDOM/RESET/SAVE/JSON/IMPORT (RHYTHM EDITORと同じ位置) -->
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+    <div id="kit-editor-actions-row" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
       <button id="kit-random-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 10px;border:1px solid #a78bfa;background:#0e0818;color:#a78bfa;">★ RANDOM</button>
       <button id="kit-editor-reset-btn2" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 9px;border:1px solid #5a3a2a;background:#0e1c2c;color:#c08060;">RESET</button>
       <button id="kit-save-btn" style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 10px;border:1px solid var(--accent3);background:#0e1c2c;color:var(--accent3);">SAVE</button>
@@ -711,33 +711,33 @@
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-<script src="./js/state.js?v14"></script>
-<script src="./js/layout-mode.js?v14"></script>
-<script src="./js/perf-diagnostics.js?v14"></script>
-<script src="./js/music-theory.js?v14"></script>
-<script src="./js/audio-core.js?v14"></script>
-<script src="./js/native-strum-synth.js?v14"></script>
-<script src="./js/voice-defs.js?v14"></script>
-<script src="./js/rhythm-patterns.js?v14"></script>
-<script src="./js/drum-synth-lm1.js?v14"></script>
-<script src="./js/drum-kits.js?v14"></script>
-<script src="./js/rhythm-scheduler.js?v14"></script>
-<script src="./js/chord-playback.js?v14"></script>
-<script src="./js/strumplate-core.js?v14"></script>
-<script src="./js/chord-ui.js?v14"></script>
-<script src="./js/strumplate-ui.js?v14"></script>
-<script src="./js/settings-ui.js?v14"></script>
-<script src="./js/rhythm-ui.js?v14"></script>
-<script src="./js/rhythm-editor.js?v14"></script>
-<script src="./js/piano-roll.js?v14"></script>
-<script src="./js/recording.js?v14"></script>
-<script src="./js/mix-studio.js?v14"></script>
-<script src="./js/kit-editor.js?v14"></script>
-<script src="./js/midi.js?v14"></script>
-<script src="./js/manual-content.js?v14"></script>
-<script src="./js/manual-ui.js?v14"></script>
-<script src="./js/arrangement.js?v14"></script>
-<script src="./js/wake-lock.js?v14"></script>
-<script src="./js/main.js?v14"></script>
+<script src="./js/state.js?v19"></script>
+<script src="./js/layout-mode.js?v19"></script>
+<script src="./js/perf-diagnostics.js?v19"></script>
+<script src="./js/music-theory.js?v19"></script>
+<script src="./js/audio-core.js?v19"></script>
+<script src="./js/native-strum-synth.js?v19"></script>
+<script src="./js/voice-defs.js?v19"></script>
+<script src="./js/rhythm-patterns.js?v19"></script>
+<script src="./js/drum-synth-lm1.js?v19"></script>
+<script src="./js/drum-kits.js?v19"></script>
+<script src="./js/rhythm-scheduler.js?v19"></script>
+<script src="./js/chord-playback.js?v19"></script>
+<script src="./js/strumplate-core.js?v19"></script>
+<script src="./js/chord-ui.js?v19"></script>
+<script src="./js/strumplate-ui.js?v19"></script>
+<script src="./js/settings-ui.js?v19"></script>
+<script src="./js/rhythm-ui.js?v19"></script>
+<script src="./js/rhythm-editor.js?v19"></script>
+<script src="./js/piano-roll.js?v19"></script>
+<script src="./js/recording.js?v19"></script>
+<script src="./js/mix-studio.js?v19"></script>
+<script src="./js/kit-editor.js?v19"></script>
+<script src="./js/midi.js?v19"></script>
+<script src="./js/manual-content.js?v19"></script>
+<script src="./js/manual-ui.js?v19"></script>
+<script src="./js/arrangement.js?v19"></script>
+<script src="./js/wake-lock.js?v19"></script>
+<script src="./js/main.js?v19"></script>
 </body>
 </html>

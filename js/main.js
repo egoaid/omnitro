@@ -2,7 +2,7 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-console.log('%c[omnitro] build: v1.5.14 — LAYOUT MODE（STANDARD/TABLET LANDSCAPE/DESKTOP FULLSCREEN）とストラムプレートのAudioパフォーマンス最適化・診断モニターを追加', 'color:#2ecc71;font-weight:bold;');
+console.log('%c[omnitro] build: v1.5.19 — DESKTOP FULLSCREENの閉じるボタン等が消えないバグを修正、KIT EDITORの一括操作行とSETTINGSの重複ロゴを非表示化、スクロールバーをテーマ配色にカスタマイズ', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

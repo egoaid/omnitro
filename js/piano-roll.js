@@ -190,11 +190,34 @@ function prInit() {
 function prResize() {
   if (!prCanvas) return;
   const wrap = document.getElementById('piano-roll-wrap');
+  const wideLayout = document.body.classList.contains('layout-tablet-landscape') ||
+                      document.body.classList.contains('layout-desktop-fullscreen');
+
   // wrap幅からSTEP_Wを逆算: スクロールバーなし、100%フィット
   const wrapW = (wrap ? wrap.clientWidth : 360) || 360;
   const availW = wrapW - PR.LABEL_W - 2;  // 左端ラベル列と右端余白を引く
-  PR.STEP_W  = Math.max(14, Math.min(28, Math.floor(availW / 16)));
+  // STANDARDレイアウトでは最大28px（既存の見た目を一切変えない）。
+  // TABLET LANDSCAPE / DESKTOP FULLSCREENでは#piano-roll-wrapが
+  // 画面いっぱいの横幅を持つため、この上限を大きく引き上げて実際の
+  // 余白幅をそのままステップ幅に反映する（=ピアノロールが横方向にも
+  // 画面全体にフィットするようになる）。
+  const stepWMax = wideLayout ? 140 : 28;
+  PR.STEP_W  = Math.max(14, Math.min(stepWMax, Math.floor(availW / 16)));
   PR.NOTE_W  = Math.max(10, Math.round(PR.STEP_W * 0.58));
+
+  // ── 行の高さ（ROW_H） ────────────────────────────────────────────────────
+  // TABLET LANDSCAPE / DESKTOP FULLSCREENでは #piano-roll-wrap が
+  // flex:1 で縦幅いっぱいに引き伸ばされるため、その実際の高さに合わせて
+  // 行の高さ自体も拡大し、タップ/ドラッグしやすくする。
+  // STANDARDレイアウトではwrapの高さは常にcanvas自身のサイズで決まる
+  // （flexで引き伸ばされない）ため、常に34px固定のまま — 既存の見た目・
+  // 挙動を一切変えない。
+  if (wideLayout && wrap && wrap.clientHeight > 0) {
+    PR.ROW_H = Math.max(34, Math.min(90, Math.floor(wrap.clientHeight / PR.ROWS.length)));
+  } else {
+    PR.ROW_H = 34;
+  }
+
   const W = PR.LABEL_W + PR.STEP_W * 16 + 2;
   const H = PR.ROW_H * PR.ROWS.length;
   prCanvas.style.width  = W + 'px';
