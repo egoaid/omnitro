@@ -187,6 +187,23 @@ function prInit() {
   prSetupEvents();
 }
 
+// ── ブラウザウィンドウのリサイズに追従 ────────────────────────────────────────
+// 従来はレイアウトモード切替時（js/layout-mode.js）にしかprResize()が
+// 呼ばれておらず、DESKTOP FULLSCREENのままブラウザウィンドウ自体を
+// 拡大縮小してもピアノロールのステップ幅・行の高さ・キャンバスサイズが
+// 追従しなかった（=ノートがフィットしない）。ウィンドウのresizeイベントに
+// 直接フックし、初期化済み（prCanvasが存在する）場合のみ再計算する。
+// rAFで間引き、連続的なリサイズ中に過剰に再計算しないようにしている。
+let _prResizePending = false;
+window.addEventListener('resize', () => {
+  if (!prCanvas || _prResizePending) return;
+  _prResizePending = true;
+  requestAnimationFrame(() => {
+    _prResizePending = false;
+    prResize();
+  });
+});
+
 function prResize() {
   if (!prCanvas) return;
   const wrap = document.getElementById('piano-roll-wrap');
@@ -410,16 +427,26 @@ function prSetupEvents() {
     ghostTog.classList.toggle('on', ghostOn);
     document.getElementById('spp-ghost-val').textContent = ghostOn ? 'ON' : 'OFF';
     // ── ポップアップ位置: 画面内に確実に収める ──────────────────────────────
+    // canvasRect(実際に描画されているCSSピクセルサイズ)と、PR.STEP_W/
+    // PR.ROW_Hから計算される論理サイズにズレがあっても正しい位置に出す
+    // ため、スケール係数を実測して補正する（ウィンドウリサイズ直後など、
+    // 万一canvasの実サイズとPRの論理値がまだ食い違うタイミングがあっても
+    // ポップアップが正しいノートの位置からズレないようにする防御的な計算）。
+    const logicalW = PR.LABEL_W + PR.STEP_W * 16 + 2;
+    const logicalH = PR.ROW_H * PR.ROWS.length;
+    const scaleX = logicalW > 0 ? canvasRect.width  / logicalW : 1;
+    const scaleY = logicalH > 0 ? canvasRect.height / logicalH : 1;
     const popup_w = 190, popup_h = 168;
-    const canvasX  = prEventToX(evt) + PR.NOTE_W/2;
+    const canvasX  = (prEventToX(evt) + PR.NOTE_W/2) * scaleX;
     const screenX  = canvasRect.left + canvasX;
     const rowIdx   = PR.ROWS.indexOf(ch);
-    const screenY  = canvasRect.top + rowIdx * PR.ROW_H;
+    const rowH     = PR.ROW_H * scaleY;
+    const screenY  = canvasRect.top + rowIdx * rowH;
     // 右に出す。はみ出すなら左
     let px = screenX + 8;
     if (px + popup_w > window.innerWidth - 4) px = screenX - popup_w - 8;
     // 下に出す。はみ出すなら上
-    let py = screenY + PR.ROW_H + 4;
+    let py = screenY + rowH + 4;
     if (py + popup_h > window.innerHeight - 4) py = screenY - popup_h - 4;
     popup.style.left = Math.max(4, px) + 'px';
     popup.style.top  = Math.max(4, py) + 'px';

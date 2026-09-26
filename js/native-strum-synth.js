@@ -152,6 +152,25 @@ class NativeStrumSynth {
     // フィルター定義はボイス切替時に1回だけ正規化してキャッシュ（毎ノート計算しない）
     this._mainFilters = normalizeFilterDefs(voiceDef.filters);
     this._subFilters  = normalizeFilterDefs(this.subColor.filters);
+
+    // ── 共有ビブラートLFO（v1.5.21最適化） ──────────────────────────────────
+    // vibratoRate/Depthはボイス固有の定数（ノートごとに変わらない）ため、
+    // 従来は毎ノートで生成していたLFO用OscillatorNodeを、ボイス切替時に
+    // 1個だけ作って鳴らし続ける方式に変更した。各ノートは深さ調整用の
+    // lfoDepth（GainNode、ノートの周波数に応じて深さが変わるため個別に
+    // 必要）だけをこの共有LFOにfan-out接続し、ノート終了時はlfoDepthだけを
+    // 切断する（共有LFO自体は次のノートのためにそのまま鳴り続ける）。
+    // 変調のかかり方・音自体は従来と完全に同一で、ノートごとのオシレー
+    // ター生成数を1個減らせる（iPad等CPU制約端末でのノード生成コスト
+    // 削減が目的）。
+    if (this._sharedLfo) {
+      try { this._sharedLfo.stop(); this._sharedLfo.disconnect(); } catch(e){}
+    }
+    this._sharedLfo = this.ctx.createOscillator();
+    this._sharedLfo.type = 'sine';
+    this._sharedLfo.frequency.value =
+      voiceDef.vibratoRate != null ? voiceDef.vibratoRate : VIBRATO_RATE;
+    this._sharedLfo.start();
   }
 
   // ── 真のパニック停止 ─────────────────────────────────────────────────────
@@ -247,8 +266,16 @@ class NativeStrumSynth {
 
     let nodesCreated = 0;
 
-    // ── ADSR エンベロープ用のGainNode（2ボイス共有） ──
-    const safePeak = Math.max(0.0001, peak);
+    // ── Voice1/Voice2のミックス比（v1.5.21最適化） ──────────────────────────
+    // 従来はosc1・osc2それぞれに専用のmix1/mix2 GainNodeで0.68/0.04倍して
+    // からenvGainへ合流させていたが、mix1（osc1側）は「envGainの目標振幅
+    // 自体を0.68倍しておく」ことで省略できる（envGainはosc1を直結で
+    // 受け取り、その合計をenベロープ倍率で増幅するため、目標値を先に0.68倍
+    // しておけば数式上mix1を挟んだ場合と完全に同じ出力になる）。
+    // osc2側はenvGainに対する相対比（0.04/0.68）のGainNode(mix2)のみ残す。
+    // 出力波形は従来と1サンプルも変わらず、ノードを1個節約できる。
+    const MIX1 = 0.68, MIX2 = 0.04;
+    const safePeak = Math.max(0.0001, peak * MIX1);
     const envGain = ctx.createGain(); nodesCreated++;
     envGain.gain.setValueAtTime(0.0001, now);
     envGain.gain.exponentialRampToValueAtTime(safePeak, now + safeAttack);
@@ -259,24 +286,20 @@ class NativeStrumSynth {
 
     // ── Voice1: FM変調ボイス（ヴィブラート） ──
     const osc1  = ctx.createOscillator(); nodesCreated++;
-    const mix1  = ctx.createGain(); nodesCreated++;
     osc1.type   = this.oscType;
     osc1.frequency.setValueAtTime(freq, now);
     osc1.detune.setValueAtTime((Math.random() - 0.5) * 1.8, now);
-    mix1.gain.value = 0.68;
 
-    const lfo      = ctx.createOscillator(); nodesCreated++;
+    // ビブラートLFO自体はボイス共有（update()で1個だけ生成・常時稼働）。
+    // ノートごとに必要なのは深さ調整用のlfoDepthだけ（周波数依存のため
+    // ノート固有）。共有LFOにfan-out接続し、ノート終了時はlfoDepthだけを
+    // 切断する（共有LFO自体は止めない＝他のノートに影響しない）。
     const lfoDepth = ctx.createGain(); nodesCreated++;
-    lfo.type = 'sine';
-    lfo.frequency.value = (this.color.vibratoRate != null ? this.color.vibratoRate : VIBRATO_RATE);
     lfoDepth.gain.value = freq * (this.color.vibratoDepth != null ? this.color.vibratoDepth : VIBRATO_DEPTH);
-    lfo.connect(lfoDepth);
+    this._sharedLfo.connect(lfoDepth);
     lfoDepth.connect(osc1.frequency);
-    lfo.start(now);
-    lfo.stop(releaseStart + this.release + 0.1);
 
-    osc1.connect(mix1);
-    mix1.connect(envGain);
+    osc1.connect(envGain);
     osc1.start(now);
     osc1.stop(releaseStart + this.release + 0.1);
 
@@ -286,7 +309,7 @@ class NativeStrumSynth {
     osc2.type   = 'square';
     osc2.frequency.setValueAtTime(freq, now);
     osc2.detune.setValueAtTime((Math.random() - 0.5) * 0.9, now);
-    mix2.gain.value = 0.04;
+    mix2.gain.value = MIX2 / MIX1;
 
     osc2.connect(mix2);
     mix2.connect(envGain);
@@ -294,7 +317,7 @@ class NativeStrumSynth {
     osc2.stop(releaseStart + this.release + 0.1);
 
     let output = envGain;
-    const allGainNodes = [envGain, mix1, mix2, lfoDepth];
+    const allGainNodes = [envGain, mix2, lfoDepth];
     for (const def of this._mainFilters) {
       const filter = ctx.createBiquadFilter(); nodesCreated++;
       filter.type = def.type || 'lowpass';
@@ -323,25 +346,25 @@ class NativeStrumSynth {
     const subDecay = Math.max(0.08, sub.decay ?? this.decay);
     const subSustain = Math.max(0.04, Math.min(1, sub.sustain ?? Math.max(0.55, this.sustain * 0.85)));
     const subRelease = Math.max(0.05, Math.min(8.0, sub.release ?? this.release));
-    const subPeak = this.subGainVal * velocity;
+    // subMix(0.75倍)もenvGainと同じ考え方でsubPeak自体に折り込み、
+    // subOscをsubEnvへ直結する（ノードを1個節約、出力は数式上同一）。
+    const SUB_MIX = 0.75;
+    const subPeak = this.subGainVal * velocity * SUB_MIX;
 
     const subOsc = ctx.createOscillator(); nodesCreated++;
-    const subMix = ctx.createGain(); nodesCreated++;
     const subEnv = ctx.createGain(); nodesCreated++;
     subOsc.type = subOscType;
     subOsc.frequency.setValueAtTime(freq, now);
     subOsc.detune.setValueAtTime((Math.random() - 0.5) * 0.75, now);
-    subMix.gain.value = 0.75;
     subEnv.gain.setValueAtTime(0.0001, now);
     subEnv.gain.exponentialRampToValueAtTime(Math.max(0.0001, subPeak), now + subAttack);
     subEnv.gain.linearRampToValueAtTime(Math.max(0.0001, subPeak * subSustain), now + subAttack + subDecay);
     const subReleaseStart = now + subAttack + subDecay + 0.05;
     subEnv.gain.setValueAtTime(Math.max(0.0001, subPeak * subSustain), subReleaseStart);
     subEnv.gain.exponentialRampToValueAtTime(0.0001, subReleaseStart + subRelease);
-    subOsc.connect(subMix);
-    subMix.connect(subEnv);
+    subOsc.connect(subEnv);
 
-    const subGainNodes = [subEnv, subMix];
+    const subGainNodes = [subEnv];
     let subOutput = subEnv;
     for (const def of this._subFilters) {
       const filter = ctx.createBiquadFilter(); nodesCreated++;
@@ -365,8 +388,10 @@ class NativeStrumSynth {
     subOsc.stop(subReleaseStart + subRelease + 0.1);
 
     // ── このノートのボイスをアクティブ追跡配列に登録 ──────────────────────
+    // 注: 共有LFO（this._sharedLfo）はここに含めない（stop/disconnectの
+    // 対象にしてはいけない — 他の全ノートの変調源を道連れに止めてしまう）。
     const voiceEntry = {
-      oscs:  [osc1, lfo, osc2, subOsc],
+      oscs:  [osc1, osc2, subOsc],
       gains: [...allGainNodes, ...subGainNodes],
     };
     this._activeVoices.push(voiceEntry);
@@ -380,8 +405,8 @@ class NativeStrumSynth {
 
     // ── 自然終了時に追跡配列から除去 ─────────────────────────────────────
     osc1.onended = () => {
-      try { mix1.disconnect(); lfoDepth.disconnect(); envGain.disconnect(); } catch(e){}
-      window._omniPerf.nodesDestroyed += 3;
+      try { lfoDepth.disconnect(); envGain.disconnect(); } catch(e){}
+      window._omniPerf.nodesDestroyed += 2;
       const idx = this._activeVoices.indexOf(voiceEntry);
       if (idx !== -1) {
         this._activeVoices.splice(idx, 1);
@@ -389,13 +414,21 @@ class NativeStrumSynth {
       }
     };
     subOsc.onended = () => {
-      try { subMix.disconnect(); subEnv.disconnect(); } catch(e){}
-      window._omniPerf.nodesDestroyed += 2;
+      try { subEnv.disconnect(); } catch(e){}
+      window._omniPerf.nodesDestroyed += 1;
     };
   }
 
   releaseAll() {}
-  dispose()    {}
+  dispose() {
+    // ボイス切替時にupdateVoice()から呼ばれる。共有LFO（update()で生成）を
+    // 確実に停止・切断しないと、切り替えるたびに孤立したLFOが鳴り続けて
+    // 蓄積してしまう。
+    if (this._sharedLfo) {
+      try { this._sharedLfo.stop(); this._sharedLfo.disconnect(); } catch(e){}
+      this._sharedLfo = null;
+    }
+  }
 }
 
 

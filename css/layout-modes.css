@@ -252,16 +252,52 @@ body.layout-desktop-fullscreen #rhythm-editor-overlay    { grid-area: rhythm; }
 body.layout-desktop-fullscreen #kit-editor-overlay       { grid-area: kit; }
 body.layout-desktop-fullscreen #mix-studio               { grid-area: mix; }
 
-/* 常時表示のため「閉じる(✕)」ボタンは意味を持たない。混乱を避けるため
-   非表示にする（副作用のない単純な閉じるボタンのみ。MIX STUDIOの✕は
-   録音破棄という実際の機能を持つ別物なので対象外＝そのまま残す）。
-   #close-settingsと#kit-editor-close-btnはHTML側にインラインstyleで
-   display:flexが指定されているため、!importantを付けないと外部CSSの
-   display:noneが無視される（v1.5.17で#kit-editor-overlay自体に起きた
-   のと同じ原因のバグ）。 */
+/* ── ヘッダー内の「画面を切り替えるためのボタン」を非表示にする ──────────
+   STANDARD/TABLET LANDSCAPEでは「今どの画面を表示するか」を切り替える
+   ためにヘッダーへ閉じるボタン・ナビゲーションボタン・トランスポート
+   ボタンが必要だが、DESKTOP FULLSCREENでは全セクションが常時同時に
+   見えているため、これらの多くが重複・不要になる。ユーザー指定の通り、
+   セクションごとに以下を非表示にする（実際の機能自体は削除していない
+   ——別のセクションの同機能ボタンやEXPORT横のDISCARDボタン等が
+   引き続き使える）。
+
+   常時表示のため「閉じる(✕)」ボタンは意味を持たない（MIX STUDIOの✕は
+   録音破棄の機能を持つが、これも今回ユーザーの指定により非表示にする）。
+   #close-settings・#kit-editor-close-btn・#fill-btn・#fill-btn-kitは
+   HTML側にインラインstyleでdisplayが指定されており、JS側でも実行時に
+   style.displayを直接書き換える（FILLボタン）ため、!importantを付け
+   ないと外部CSSのdisplay:noneが無視される
+   （v1.5.17で#kit-editor-overlay自体に起きたのと同じ原因のバグ）。 */
+
+/* STRUM PLATEセクション: RHYTHM再生・FILL・設定アイコンを非表示
+   （RHYTHM再生はRHYTHM EDITOR側に、設定はSETTINGSタイル自体にある） */
+body.layout-desktop-fullscreen #play-btn,
+body.layout-desktop-fullscreen #fill-btn,
+body.layout-desktop-fullscreen #settings-btn {
+  display: none !important;
+}
+
+/* RHYTHM EDITORセクション: KIT EDITORへのナビゲーションボタンのみ非表示
+   （KIT EDITORは既に別タイルとして常時見えているため） */
+body.layout-desktop-fullscreen #reditor-to-kit-btn {
+  display: none !important;
+}
+
+/* KIT EDITORセクション: RHYTHM再生・FILL・RHYTHM EDITORへのナビゲーション
+   ボタンを非表示（いずれもRHYTHM EDITORタイル側に既にある） */
+body.layout-desktop-fullscreen #kit-play-btn,
+body.layout-desktop-fullscreen #fill-btn-kit,
+body.layout-desktop-fullscreen #kit-to-reditor-btn {
+  display: none !important;
+}
+
+/* SETTINGS / RHYTHM EDITOR / KIT EDITORの単純な閉じるボタン、および
+   MIX STUDIOの閉じる(録音破棄)ボタンを非表示にする
+   （MIX STUDIOの録音破棄自体はEXPORT欄の「✕ DISCARD」で引き続き可能）。 */
 body.layout-desktop-fullscreen #close-settings,
 body.layout-desktop-fullscreen #reditor-close-btn,
-body.layout-desktop-fullscreen #kit-editor-close-btn {
+body.layout-desktop-fullscreen #kit-editor-close-btn,
+body.layout-desktop-fullscreen #studio-discard-btn {
   display: none !important;
 }
 
