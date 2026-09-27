@@ -2,6 +2,11 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
+  /* v1.5.25: 全画面でテキスト選択を無効化。
+     input/textarea等のフォーム要素は仕様上user-selectの影響を受けず、
+     編集・カーソル操作・内部でのテキスト選択は従来通り可能。 */
+  * { user-select: none; -webkit-user-select: none; }
+
   :root {
     --body-color: #1a1a2e;
     --panel-color: #0d1b2a;

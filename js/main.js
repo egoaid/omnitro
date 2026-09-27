@@ -2,7 +2,7 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-console.log('%c[omnitro] build: v1.5.24 — iPad実機でノイズ再発の追加修正：touchmove処理のレート制限＋フラッシュ演出の強制リフロー除去＋perfログの軽量化', 'color:#2ecc71;font-weight:bold;');
+console.log('%c[omnitro] build: v1.5.25 — 自然終了ノートのノードリーク修正（フィルター等が永久に接続されたままになるv1.4時代からのバグ）＋PIANO ROLLポップアップのスライダーはみ出し修正＋CASIO→CHEAP＋全画面テキスト選択無効化', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

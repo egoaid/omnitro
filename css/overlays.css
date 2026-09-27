@@ -687,6 +687,7 @@
   .spp-slider {
     flex: 1; height: 3px; accent-color: var(--accent1);
     background: #1a2a3a; border-radius: 2px; cursor: pointer;
+    min-width: 0; /* input[type=range]の既定の内在幅によるポップアップからのはみ出しを防ぐ */
   }
   .spp-val {
     font-size: 8px; color: var(--accent1);

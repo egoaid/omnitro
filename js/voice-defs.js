@@ -65,7 +65,7 @@ const VOICE_DEFS = {
     sub:  { type: 'strings', maxPolyphony: 5, osc: 'sawtooth', attack: 0.9, decay: 0.35, sustain: 0.65, release: 3.5, volumeOffset: -3, filters: [{ type: 'lowpass', frequency: 3200, Q: 0.55 }], drive: 0.005 },
   },
   casio: {
-    label: 'CASIO',
+    label: 'CHEAP',
     main: {
       osc: 'square',
       attack: 0.008, decay: 0.18, sustain: 0.55, release: 1.6, volume: -10,

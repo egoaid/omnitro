@@ -226,6 +226,7 @@ class NativeStrumSynth {
     const voicesToDestroy = this._activeVoices;
     this._activeVoices = [];   // 新しい発音は新しい配列に追加される
     window._omniPerf.currentVoices = 0;
+    for (const voice of voicesToDestroy) voice._stolen = true; // onended側の二重処理防止
 
     setTimeout(() => {
       const stopAt = this.ctx.currentTime;
@@ -252,6 +253,7 @@ class NativeStrumSynth {
   _stealOldestVoice() {
     const voice = this._activeVoices.shift();
     if (!voice) return;
+    voice._stolen = true; // onended側に「後片付け済み」を伝える印（二重disconnect防止）
     const now = this.ctx.currentTime;
     for (const node of voice.gains) {
       if (node.gain) {
@@ -449,9 +451,28 @@ class NativeStrumSynth {
     if (perf.currentVoices > perf.maxConcurrentVoices) perf.maxConcurrentVoices = perf.currentVoices;
 
     // ── 自然終了時に追跡配列から除去 ─────────────────────────────────────
+    // v1.5.25: 重大なリーク修正。従来はここで envGain と lfoDepth の
+    // 2つしかdisconnect()していなかった。mix2・フィルター（allGainNodesの
+    // 残り）は「voice stealで間引かれた場合」の後片付け（_stealOldestVoice
+    // のsetTimeoutコールバック）でしか正しくdisconnectされておらず、
+    // 上限に達せず自然に鳴り終えたノートではフィルター等が永久に
+    // 接続されたまま残っていた。BiquadFilterNodeは入力が無音でも
+    // 出力先（nativeDest）へ経路が繋がっている限り毎レンダークォンタム
+    // 処理され続けるため、演奏時間が長くなるほどこの「孤児フィルター」が
+    // 積み重なり、オーディオスレッドの負荷がじわじわ増えていく——
+    // このバグはv1.4時代のオリジナル実装から存在しており、AUDIO
+    // PERFORMANCE MODEの新旧いずれにも（HIGH QUALITY/LOW POWER両方に）
+    // 影響していた。voice stealパスと同じく allGainNodes 全体を
+    // disconnectするよう修正した（音・エンベロープ・演奏感には一切影響
+    // しない——既に鳴り終わった無音ノードの後片付けを完全にするだけ）。
     osc1.onended = () => {
-      try { lfoDepth.disconnect(); envGain.disconnect(); } catch(e){}
-      window._omniPerf.nodesDestroyed += 2;
+      if (voiceEntry._stolen) return; // voice steal側で既に全ノード後片付け済み
+      // 自然終了ケース: mix2・フィルター類（allGainNodesの残り）も含めて
+      // 完全にdisconnectする。
+      for (const node of allGainNodes) { try { node.disconnect(); } catch(e){} }
+      try { osc1.disconnect(); } catch(e){}
+      try { osc2.disconnect(); } catch(e){}
+      window._omniPerf.nodesDestroyed += allGainNodes.length;
       const idx = this._activeVoices.indexOf(voiceEntry);
       if (idx !== -1) {
         this._activeVoices.splice(idx, 1);
@@ -460,8 +481,10 @@ class NativeStrumSynth {
     };
     if (subOsc) {
       subOsc.onended = () => {
-        try { subGainNodes[0].disconnect(); } catch(e){}
-        window._omniPerf.nodesDestroyed += 1;
+        if (voiceEntry._stolen) return; // voice steal側で既に全ノード後片付け済み
+        for (const node of subGainNodes) { try { node.disconnect(); } catch(e){} }
+        try { subOsc.disconnect(); } catch(e){}
+        window._omniPerf.nodesDestroyed += subGainNodes.length;
       };
     }
   }
