@@ -18,19 +18,25 @@ function _acquireFlashEl(sp) {
   let el;
   if (_flashPool.length < FLASH_POOL_SIZE) {
     el = document.createElement('div');
+    el.className = 'note-flash'; // position:absolute等を含むベースクラスは常時維持する
     sp.appendChild(el);
     _flashPool.push(el);
   } else {
     el = _flashPool[_flashPoolIdx];
     _flashPoolIdx = (_flashPoolIdx + 1) % FLASH_POOL_SIZE;
   }
-  el.className = ''; // アニメーションを一旦解除してから呼び出し側でスタイル設定
   return el;
 }
 
 function _playFlash(el) {
-  void el.offsetWidth; // リフロー強制でアニメーションを確実に先頭から再生
-  el.className = 'note-flash';
+  // v1.5.24: `void el.offsetWidth` による強制同期リフローを廃止。
+  // className自体（position:absoluteを含む）は常に'note-flash'のまま維持し、
+  // `animation-name`だけを一時的に'none'にしてから次フレームで元に戻す方式に
+  // 変更した。animation-nameの切り替えはレイアウトに影響しない（合成/描画のみ）
+  // ため、レイアウトを伴う強制リフローなしで安全にアニメーションを
+  // 再スタートできる。見た目・アニメーション自体は元の実装と完全に同一。
+  el.style.animationName = 'none';
+  requestAnimationFrame(() => { el.style.animationName = ''; });
 }
 
 function getNoteAtPos(clientPos, rect) {

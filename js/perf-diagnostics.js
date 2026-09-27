@@ -49,12 +49,23 @@
   }
 
   function appendLog(line) {
-    logLines.push(`[${nowStr()}] ${line}`);
-    if (logLines.length > 400) logLines.splice(0, logLines.length - 400);
-    if (logEl) {
-      logEl.value = logLines.join('\n');
-      logEl.scrollTop = logEl.scrollHeight;
+    // v1.5.24: 全文再構築(join)+強制リフロー(scrollHeight読み取り)を廃止。
+    // 従来は毎回ログ全体を文字列化してtextareaのvalueを丸ごと差し替え、
+    // 直後にscrollHeightを読み取ってscrollTopに代入していた——scrollHeightの
+    // 読み取りはブラウザに保留中のレイアウトを同期的に確定させる（強制リフロー）
+    // ため、頻繁な呼び出し（ストラム演奏中は250〜900ms間隔で連続発生）が
+    // 演奏そのものと競合してフレーム落ちを悪化させていた。
+    // 通常時は追記のみ行い、スクロールは巨大な値を代入するだけにする
+    // （ブラウザが自動的に最大値へクランプするためscrollHeightを読む必要がない）。
+    const text = `[${nowStr()}] ${line}`;
+    logLines.push(text);
+    if (logLines.length > 400) {
+      logLines.splice(0, logLines.length - 400);
+      if (logEl) logEl.value = logLines.join('\n') + '\n'; // 400行超過時のみ稀に再構築
+    } else if (logEl) {
+      logEl.value += text + '\n';
     }
+    if (logEl) logEl.scrollTop = 1e9;
   }
 
   function getCtxInfo() {

@@ -9,6 +9,21 @@ function setupStrumplate() {
   let active = false, startPos = 0, startTime = 0, totalMove = 0;
   let holdTimer = null, gestureMode = null;
 
+  // ── v1.5.24: touchmove/mousemove処理のレート上限 ────────────────────────
+  // iPad第7世代の実機ログで、v1.5.23（音配列メモ化＋発音レートゲート）適用後も
+  // フレーム落ちが継続することが判明した。しかも音を全く鳴らしていない
+  // 期間にもフレーム落ちが起きていた——原因はストラムの音声処理ではなく、
+  // touchmoveハンドラー自体（インジケーターDOM更新・ノート判定の呼び出し）が
+  // 生のタッチサンプリング周波数のまま（画面のリフレッシュレートより高頻度に、
+  // かつ e.preventDefault() が必要なため常に同期実行で）毎回走っていたこと。
+  // ここでは「画面が実際に表示できる頻度」（約70Hz、60Hz表示に十分な余裕を
+  // 持たせた値）を超える呼び出し分だけを静かに間引く。ストラム自体の音楽的
+  // ロジック（しきい値判定・速度計算・音配列）は一切変更しない——同じ処理を
+  // 呼ぶ「頻度」を画面が追いつける範囲に制限するだけ。
+  const MOVE_THROTTLE_MS = 14;
+  let _firstMoveThrottleTs = 0;
+  let firstFingerId = null; // strumFingers.keys().next().value の毎回呼び出しを避けるキャッシュ
+
   const updateRect = () => { rect = sp.getBoundingClientRect(); };
 
   // Get primary axis position relative to strumplate
@@ -182,6 +197,7 @@ function setupStrumplate() {
         const el = createIndicatorEl(colorIdx);
         moveIndicatorEl(el, pos);
         strumFingers.set(t.identifier, { lastArpX: pos, colorIdx, indicatorEl: el, lastNote: null });
+        firstFingerId = t.identifier;
         onStart(pos);
       } else {
         // 2本目以降: ホールドタイマーをキャンセル、全指をスライドモードへ
@@ -200,12 +216,23 @@ function setupStrumplate() {
 
   sp.addEventListener('touchmove', e => {
     e.preventDefault();
+    const ts = performance.now();
     for (const t of e.changedTouches) {
       if (!strumFingers.has(t.identifier)) continue;
-      const pos = getPos(t.clientX, t.clientY);
       const finger = strumFingers.get(t.identifier);
-      const isFirst = t.identifier === strumFingers.keys().next().value;
+      const isFirst = t.identifier === firstFingerId;
 
+      // ── レート上限: 画面が追いつける頻度を超える分は間引く ────────────────
+      // （インジケーター移動・ノート判定のどちらも行わず、次のイベントへ）
+      if (isFirst) {
+        if (ts - _firstMoveThrottleTs < MOVE_THROTTLE_MS) continue;
+        _firstMoveThrottleTs = ts;
+      } else {
+        if (ts - (finger._moveThrottleTs || 0) < MOVE_THROTTLE_MS) continue;
+        finger._moveThrottleTs = ts;
+      }
+
+      const pos = getPos(t.clientX, t.clientY);
       // インジケーターを移動（全指共通）
       if (finger.indicatorEl) moveIndicatorEl(finger.indicatorEl, pos);
 
@@ -229,14 +256,16 @@ function setupStrumplate() {
       if (!strumFingers.has(t.identifier)) continue;
       const pos = getPos(t.clientX, t.clientY);
       const finger = strumFingers.get(t.identifier);
-      const wasFirst = t.identifier === strumFingers.keys().next().value;
+      const wasFirst = t.identifier === firstFingerId;
       if (finger.indicatorEl) removeIndicatorEl(finger.indicatorEl);
       strumFingers.delete(t.identifier);
 
       if (wasFirst) {
         if (strumFingers.size === 0) {
+          firstFingerId = null;
           onEnd(pos);
         } else {
+          firstFingerId = strumFingers.keys().next().value; // 残った指の中の最古のものを新しい1本目に
           cancelHoldTimer();
           onEnd(pos);
           active = true;
@@ -261,11 +290,18 @@ function setupStrumplate() {
       hideIndicator();
       active = false;
       gestureMode = null;
+      firstFingerId = null;
     }
   }, { passive: false });
 
   sp.addEventListener('mousedown',  e => { onStart(getPos(e.clientX, e.clientY)); });
-  sp.addEventListener('mousemove',  e => { if (active) onMove(getPos(e.clientX, e.clientY)); });
+  sp.addEventListener('mousemove',  e => {
+    if (!active) return;
+    const ts = performance.now();
+    if (ts - _firstMoveThrottleTs < MOVE_THROTTLE_MS) return;
+    _firstMoveThrottleTs = ts;
+    onMove(getPos(e.clientX, e.clientY));
+  });
   sp.addEventListener('mouseup',    e => { onEnd(getPos(e.clientX, e.clientY)); });
   sp.addEventListener('mouseleave', e => { if (active) onEnd(getPos(e.clientX, e.clientY)); });
 }
