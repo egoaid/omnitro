@@ -2,7 +2,7 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-console.log('%c[omnitro] build: v1.5.22 — AUDIO PERFORMANCE MODE（HIGH QUALITY/LOW POWER）を追加。iPad第7世代等ではLOW POWER MODEでストラムプレートの負荷を大幅に下げられる', 'color:#2ecc71;font-weight:bold;');
+console.log('%c[omnitro] build: v1.5.23 — LOW POWERでもノイズが出る問題を修正：ストラム音配列のメモ化＋LOW POWER時の発音レート上限追加', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

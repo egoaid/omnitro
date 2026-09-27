@@ -55,6 +55,20 @@ function getMaxActiveVoices() {
 // voice steal時のフェード時間（クリック音を防ぎつつ素早く間引く）
 const VOICE_STEAL_FADE = 0.012;
 
+// ── LOW POWER: 発音トリガー自体のレート上限（v1.5.23） ──────────────────────
+// 実機ログで判明した事実: LOW POWERで同時発音数の上限を7に下げても、
+// 高速マルチタッチストラム時はnotes triggered 489回中445回(91%)がvoice steal
+// になっていた。これは「上限に達した状態でトリガーが来るたび、cap判定＋
+// 間引き処理（AudioParam操作・setTimeout予約）を実行する」コストそのものが
+// メインスレッドを圧迫していたことを意味する——同時発音数の上限だけでは
+// 「トリガー自体の頻度」は一切減らせない。
+// LOW POWER時のみ、直近の発音から一定時間（約22ms≒45notes/sec相当。通常の
+// 演奏では絶対に到達しない値）が経っていない発音は静かに間引く（音を出さず
+// 早期return）。これにより極端なバースト時のAudioNode生成・AudioParam
+// スケジューリング・voice steal処理の発生回数そのものを減らす。
+// HIGH QUALITY時はこのゲート自体が無効（従来と完全に同じ挙動）。
+const MIN_TRIGGER_INTERVAL_LOW = 0.022; // 秒
+
 // ── 軽量パフォーマンスカウンター ────────────────────────────────────────────
 // console.logを撒かず、診断オーバーレイ（js/perf-diagnostics.js）が任意の
 // タイミングでポーリングして読み取れるようにするための単純なカウンタ集合。
@@ -263,13 +277,24 @@ class NativeStrumSynth {
 
   triggerAttackRelease(noteStr, velocity = 0.6) {
     const lowPower = isLowPowerMode();
+    const ctx  = this.ctx;
+    const now  = ctx.currentTime;
+
+    // ── LOW POWER: 発音レート自体のゲート（cap判定より前に行う） ────────────
+    // ここで弾くことで、以降のcap判定・voice steal処理・ノード生成が
+    // 一切走らなくなる（間引きコストそのものをゼロにする）。
+    if (lowPower) {
+      if (this._lastTriggerTime != null && (now - this._lastTriggerTime) < MIN_TRIGGER_INTERVAL_LOW) {
+        return;
+      }
+      this._lastTriggerTime = now;
+    }
+
     // ── 同時発音数の安全上限チェック（通常演奏では発火しない） ──────────────
     if (this._activeVoices.length >= getMaxActiveVoices()) {
       this._stealOldestVoice();
     }
 
-    const ctx  = this.ctx;
-    const now  = ctx.currentTime;
     const freq = noteToFrequency(noteStr) * tuneRatio();
     const peak = this.gainVal * velocity;
 

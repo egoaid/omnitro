@@ -74,10 +74,30 @@ function noteNameToMidi(noteName) {
   return (octave + 1) * 12 + noteIdx;
 }
 
+// ─── v1.5.23 パフォーマンス最適化: ストラム音配列のメモ化 ─────────────────────
+// buildOmnicordStrumList/buildRegularStrumList は root+type+strumArpMode だけの
+// 純粋関数（実行結果は常に同一）だが、getArpeggioNotes は指を動かすたびに
+// （実際に鳴る/鳴らないに関わらず）touchmove一回ごとに呼ばれるため、配列を
+// 毎回ゼロから再生成していた（文字列連結13回、regularモードではさらに正規表現
+// パース+ソート）。これがマルチタッチ高速ストラム時にメインスレッドをブロック
+// する主要因の一つだった。root+type+modeの組み合わせは高々 12×9×2=216 通りしか
+// 存在せず、strumArpModeもセッション中に変化しないため、キャッシュに無効化は
+// 一切不要（純粋なメモ化）。アルゴリズム自体・出力される音配列は完全に同一。
+const _strumListCache = new Map();
+function getStrumListCached(root, type) {
+  const key = strumArpMode + '|' + root + '|' + type;
+  let list = _strumListCache.get(key);
+  if (!list) {
+    list = strumArpMode === 'omnicord'
+      ? buildOmnicordStrumList(root, type)
+      : buildRegularStrumList(root, type);
+    _strumListCache.set(key, list);
+  }
+  return list;
+}
+
 function getArpeggioNotes(root, type, position) {
-  const allNotes = strumArpMode === 'omnicord'
-    ? buildOmnicordStrumList(root, type)
-    : buildRegularStrumList(root, type);
+  const allNotes = getStrumListCached(root, type);
 
   if (!allNotes || allNotes.length === 0) return null;
 
