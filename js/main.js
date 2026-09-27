@@ -2,7 +2,7 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-console.log('%c[omnitro] build: v1.5.21 — NativeStrumSynthのノード生成数をさらに削減（共有LFO化・mix段のenvGain折り込み）。ノート1つあたりオシレーター4→3、ノード13→10に削減（音は完全に同一）', 'color:#2ecc71;font-weight:bold;');
+console.log('%c[omnitro] build: v1.5.22 — AUDIO PERFORMANCE MODE（HIGH QUALITY/LOW POWER）を追加。iPad第7世代等ではLOW POWER MODEでストラムプレートの負荷を大幅に下げられる', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();
@@ -24,6 +24,7 @@ setupManual();
 setupArrangementUI();
 setupWakeLock();
 setupLayoutMode();
+setupAudioPerformance();
 setupPerfMonitor();
 
 // 起動時に最初のプリセットをロード（editorStateとselectを初期化）

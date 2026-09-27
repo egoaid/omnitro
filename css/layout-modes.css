@@ -31,6 +31,37 @@
 .layout-mode-btn::before { content: '○  '; }
 .layout-mode-btn.active::before { content: '●  '; }
 
+/* ── SETTINGS内のAUDIO PERFORMANCE MODE切り替えボタン ──
+   （.layout-mode-btnと見た目は同一だが、js/layout-mode.jsの
+   querySelectorAll('.layout-mode-btn')が誤ってこちらのボタンにも
+   反応してしまわないよう、別クラスとして独立させている） */
+.audio-perf-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.audio-perf-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 9px 10px;
+  border: 1px solid #1a3a5a;
+  background: #0e1c2c;
+  color: var(--text-dim);
+  text-align: left;
+  transition: all 0.12s;
+}
+.audio-perf-btn.active {
+  border-color: var(--strumglow);
+  color: var(--strumglow);
+  background: #001424;
+  box-shadow: 0 0 6px rgba(79,195,247,0.3);
+}
+.audio-perf-btn::before { content: '○  '; }
+.audio-perf-btn.active::before { content: '●  '; }
+
 /* ════════════════════════════════════════════════════════════════════════
    カスタムスクロールバー（STANDARD/TABLET LANDSCAPE/DESKTOP FULLSCREEN
    すべてに共通・全モードの見た目に一律で適用する）

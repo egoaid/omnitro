@@ -64,11 +64,11 @@
 }
 </script>
 
-<link rel="stylesheet" href="./css/variables.css?v21">
-<link rel="stylesheet" href="./css/layout.css?v21">
-<link rel="stylesheet" href="./css/chord-strum.css?v21">
-<link rel="stylesheet" href="./css/overlays.css?v21">
-<link rel="stylesheet" href="./css/layout-modes.css?v21">
+<link rel="stylesheet" href="./css/variables.css?v22">
+<link rel="stylesheet" href="./css/layout.css?v22">
+<link rel="stylesheet" href="./css/chord-strum.css?v22">
+<link rel="stylesheet" href="./css/overlays.css?v22">
+<link rel="stylesheet" href="./css/layout-modes.css?v22">
 </head>
 <body class="layout-standard">
 
@@ -369,6 +369,21 @@
     </div>
 
     <div class="settings-group">
+      <div class="settings-group-label">AUDIO PERFORMANCE</div>
+      <div class="audio-perf-grid">
+        <button class="audio-perf-btn" data-audio-perf="high">HIGH QUALITY</button>
+        <button class="audio-perf-btn" data-audio-perf="low">LOW POWER MODE</button>
+      </div>
+      <div style="font-size:8px;color:var(--text-dim);letter-spacing:0.5px;margin-top:6px;line-height:1.6;">
+        処理能力の低い端末（iPad第7世代など）でストラムプレート演奏時に
+        ノイズや音切れが出る場合はLOW POWER MODEを選んでください。
+        同時発音数を抑え、サブレイヤーを省略して負荷を下げます
+        （音は簡略化されます）。最新のiPad/Macなど余裕のある端末では
+        HIGH QUALITYのままで問題ありません。
+      </div>
+    </div>
+
+    <div class="settings-group">
       <div class="settings-group-label">LAYOUT MODE</div>
       <div class="layout-mode-grid">
         <button class="layout-mode-btn" data-layout-mode="standard">STANDARD</button>
@@ -385,7 +400,7 @@
 
     <!-- バージョン表記 + 著作権（スクロール末尾。固定フッターにはしない） -->
     <div class="settings-footer">
-      <div class="settings-version">omnitro v1.5.21</div>
+      <div class="settings-version">omnitro v1.5.22</div>
       <div class="settings-copyright">© 2026 egoaid</div>
     </div>
 
@@ -711,33 +726,34 @@
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-<script src="./js/state.js?v21"></script>
-<script src="./js/layout-mode.js?v21"></script>
-<script src="./js/perf-diagnostics.js?v21"></script>
-<script src="./js/music-theory.js?v21"></script>
-<script src="./js/audio-core.js?v21"></script>
-<script src="./js/native-strum-synth.js?v21"></script>
-<script src="./js/voice-defs.js?v21"></script>
-<script src="./js/rhythm-patterns.js?v21"></script>
-<script src="./js/drum-synth-lm1.js?v21"></script>
-<script src="./js/drum-kits.js?v21"></script>
-<script src="./js/rhythm-scheduler.js?v21"></script>
-<script src="./js/chord-playback.js?v21"></script>
-<script src="./js/strumplate-core.js?v21"></script>
-<script src="./js/chord-ui.js?v21"></script>
-<script src="./js/strumplate-ui.js?v21"></script>
-<script src="./js/settings-ui.js?v21"></script>
-<script src="./js/rhythm-ui.js?v21"></script>
-<script src="./js/rhythm-editor.js?v21"></script>
-<script src="./js/piano-roll.js?v21"></script>
-<script src="./js/recording.js?v21"></script>
-<script src="./js/mix-studio.js?v21"></script>
-<script src="./js/kit-editor.js?v21"></script>
-<script src="./js/midi.js?v21"></script>
-<script src="./js/manual-content.js?v21"></script>
-<script src="./js/manual-ui.js?v21"></script>
-<script src="./js/arrangement.js?v21"></script>
-<script src="./js/wake-lock.js?v21"></script>
-<script src="./js/main.js?v21"></script>
+<script src="./js/state.js?v22"></script>
+<script src="./js/layout-mode.js?v22"></script>
+<script src="./js/audio-performance.js?v22"></script>
+<script src="./js/perf-diagnostics.js?v22"></script>
+<script src="./js/music-theory.js?v22"></script>
+<script src="./js/audio-core.js?v22"></script>
+<script src="./js/native-strum-synth.js?v22"></script>
+<script src="./js/voice-defs.js?v22"></script>
+<script src="./js/rhythm-patterns.js?v22"></script>
+<script src="./js/drum-synth-lm1.js?v22"></script>
+<script src="./js/drum-kits.js?v22"></script>
+<script src="./js/rhythm-scheduler.js?v22"></script>
+<script src="./js/chord-playback.js?v22"></script>
+<script src="./js/strumplate-core.js?v22"></script>
+<script src="./js/chord-ui.js?v22"></script>
+<script src="./js/strumplate-ui.js?v22"></script>
+<script src="./js/settings-ui.js?v22"></script>
+<script src="./js/rhythm-ui.js?v22"></script>
+<script src="./js/rhythm-editor.js?v22"></script>
+<script src="./js/piano-roll.js?v22"></script>
+<script src="./js/recording.js?v22"></script>
+<script src="./js/mix-studio.js?v22"></script>
+<script src="./js/kit-editor.js?v22"></script>
+<script src="./js/midi.js?v22"></script>
+<script src="./js/manual-content.js?v22"></script>
+<script src="./js/manual-ui.js?v22"></script>
+<script src="./js/arrangement.js?v22"></script>
+<script src="./js/wake-lock.js?v22"></script>
+<script src="./js/main.js?v22"></script>
 </body>
 </html>

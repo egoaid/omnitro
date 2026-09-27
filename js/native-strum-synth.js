@@ -40,7 +40,18 @@ const VIBRATO_RATE  = 5.5;   // Hz
 const VIBRATO_DEPTH = 0.003; // ±30セント
 
 // 同時発音の安全上限（通常の演奏では到達しない値。暴走時のみのセーフティネット）
-const MAX_ACTIVE_VOICES = 20;
+// v1.5.22: AUDIO PERFORMANCE MODEがLOW POWERのときは、この上限自体を
+// 大幅に下げることでiPad第7世代のような非力な端末でも安定して鳴らせる
+// ようにする（ユーザーが明示的に選択した場合のみ。既定はHIGH QUALITY
+// で従来と完全に同じ挙動）。
+const MAX_ACTIVE_VOICES_HIGH = 20;
+const MAX_ACTIVE_VOICES_LOW  = 7;
+function isLowPowerMode() {
+  return typeof state !== 'undefined' && state.audioPerformanceMode === 'low';
+}
+function getMaxActiveVoices() {
+  return isLowPowerMode() ? MAX_ACTIVE_VOICES_LOW : MAX_ACTIVE_VOICES_HIGH;
+}
 // voice steal時のフェード時間（クリック音を防ぎつつ素早く間引く）
 const VOICE_STEAL_FADE = 0.012;
 
@@ -251,8 +262,9 @@ class NativeStrumSynth {
   }
 
   triggerAttackRelease(noteStr, velocity = 0.6) {
+    const lowPower = isLowPowerMode();
     // ── 同時発音数の安全上限チェック（通常演奏では発火しない） ──────────────
-    if (this._activeVoices.length >= MAX_ACTIVE_VOICES) {
+    if (this._activeVoices.length >= getMaxActiveVoices()) {
       this._stealOldestVoice();
     }
 
@@ -340,58 +352,66 @@ class NativeStrumSynth {
     output.connect(this.nativeDest);
 
     // ── Sub layer ──────────────────────────────────────────────────────────
-    const sub = this.subColor || {};
-    const subOscType = sub.osc || this.oscType;
-    const subAttack = Math.max(0.008, sub.attack ?? Math.max(0.02, this.attack * 1.25));
-    const subDecay = Math.max(0.08, sub.decay ?? this.decay);
-    const subSustain = Math.max(0.04, Math.min(1, sub.sustain ?? Math.max(0.55, this.sustain * 0.85)));
-    const subRelease = Math.max(0.05, Math.min(8.0, sub.release ?? this.release));
-    // subMix(0.75倍)もenvGainと同じ考え方でsubPeak自体に折り込み、
-    // subOscをsubEnvへ直結する（ノードを1個節約、出力は数式上同一）。
-    const SUB_MIX = 0.75;
-    const subPeak = this.subGainVal * velocity * SUB_MIX;
+    // AUDIO PERFORMANCE MODEがLOW POWERのときはサブレイヤー（トレモロ/
+    // ストリングス等の重ね音）を丸ごと省略する。1ノートあたりオシレーター
+    // 1個・GainNode/フィルター数個ぶんの負荷を削れる、最も効果の大きい
+    // 軽量化ポイントのため（メインのVoice1/Voice2は鳴るので無音にはならない）。
+    let subOsc = null;
+    let subGainNodes = [];
+    if (!lowPower) {
+      const sub = this.subColor || {};
+      const subOscType = sub.osc || this.oscType;
+      const subAttack = Math.max(0.008, sub.attack ?? Math.max(0.02, this.attack * 1.25));
+      const subDecay = Math.max(0.08, sub.decay ?? this.decay);
+      const subSustain = Math.max(0.04, Math.min(1, sub.sustain ?? Math.max(0.55, this.sustain * 0.85)));
+      const subRelease = Math.max(0.05, Math.min(8.0, sub.release ?? this.release));
+      // subMix(0.75倍)もenvGainと同じ考え方でsubPeak自体に折り込み、
+      // subOscをsubEnvへ直結する（ノードを1個節約、出力は数式上同一）。
+      const SUB_MIX = 0.75;
+      const subPeak = this.subGainVal * velocity * SUB_MIX;
 
-    const subOsc = ctx.createOscillator(); nodesCreated++;
-    const subEnv = ctx.createGain(); nodesCreated++;
-    subOsc.type = subOscType;
-    subOsc.frequency.setValueAtTime(freq, now);
-    subOsc.detune.setValueAtTime((Math.random() - 0.5) * 0.75, now);
-    subEnv.gain.setValueAtTime(0.0001, now);
-    subEnv.gain.exponentialRampToValueAtTime(Math.max(0.0001, subPeak), now + subAttack);
-    subEnv.gain.linearRampToValueAtTime(Math.max(0.0001, subPeak * subSustain), now + subAttack + subDecay);
-    const subReleaseStart = now + subAttack + subDecay + 0.05;
-    subEnv.gain.setValueAtTime(Math.max(0.0001, subPeak * subSustain), subReleaseStart);
-    subEnv.gain.exponentialRampToValueAtTime(0.0001, subReleaseStart + subRelease);
-    subOsc.connect(subEnv);
+      subOsc = ctx.createOscillator(); nodesCreated++;
+      const subEnv = ctx.createGain(); nodesCreated++;
+      subOsc.type = subOscType;
+      subOsc.frequency.setValueAtTime(freq, now);
+      subOsc.detune.setValueAtTime((Math.random() - 0.5) * 0.75, now);
+      subEnv.gain.setValueAtTime(0.0001, now);
+      subEnv.gain.exponentialRampToValueAtTime(Math.max(0.0001, subPeak), now + subAttack);
+      subEnv.gain.linearRampToValueAtTime(Math.max(0.0001, subPeak * subSustain), now + subAttack + subDecay);
+      const subReleaseStart = now + subAttack + subDecay + 0.05;
+      subEnv.gain.setValueAtTime(Math.max(0.0001, subPeak * subSustain), subReleaseStart);
+      subEnv.gain.exponentialRampToValueAtTime(0.0001, subReleaseStart + subRelease);
+      subOsc.connect(subEnv);
 
-    const subGainNodes = [subEnv];
-    let subOutput = subEnv;
-    for (const def of this._subFilters) {
-      const filter = ctx.createBiquadFilter(); nodesCreated++;
-      filter.type = def.type || 'lowpass';
-      filter.frequency.value = def.frequency || 2000;
-      filter.Q.value = def.Q || def.q || 0.7;
-      subOutput.connect(filter);
-      subOutput = filter;
-      subGainNodes.push(filter);
+      subGainNodes = [subEnv];
+      let subOutput = subEnv;
+      for (const def of this._subFilters) {
+        const filter = ctx.createBiquadFilter(); nodesCreated++;
+        filter.type = def.type || 'lowpass';
+        filter.frequency.value = def.frequency || 2000;
+        filter.Q.value = def.Q || def.q || 0.7;
+        subOutput.connect(filter);
+        subOutput = filter;
+        subGainNodes.push(filter);
+      }
+      if (sub.drive && sub.drive >= 0.02) {
+        const shaper = ctx.createWaveShaper(); nodesCreated++;
+        shaper.curve = makeSaturationCurve(sub.drive);
+        shaper.oversample = '2x';
+        subOutput.connect(shaper);
+        subOutput = shaper;
+        subGainNodes.push(shaper);
+      }
+      subOutput.connect(this.nativeDest);
+      subOsc.start(now);
+      subOsc.stop(subReleaseStart + subRelease + 0.1);
     }
-    if (sub.drive && sub.drive >= 0.02) {
-      const shaper = ctx.createWaveShaper(); nodesCreated++;
-      shaper.curve = makeSaturationCurve(sub.drive);
-      shaper.oversample = '2x';
-      subOutput.connect(shaper);
-      subOutput = shaper;
-      subGainNodes.push(shaper);
-    }
-    subOutput.connect(this.nativeDest);
-    subOsc.start(now);
-    subOsc.stop(subReleaseStart + subRelease + 0.1);
 
     // ── このノートのボイスをアクティブ追跡配列に登録 ──────────────────────
     // 注: 共有LFO（this._sharedLfo）はここに含めない（stop/disconnectの
     // 対象にしてはいけない — 他の全ノートの変調源を道連れに止めてしまう）。
     const voiceEntry = {
-      oscs:  [osc1, osc2, subOsc],
+      oscs:  subOsc ? [osc1, osc2, subOsc] : [osc1, osc2],
       gains: [...allGainNodes, ...subGainNodes],
     };
     this._activeVoices.push(voiceEntry);
@@ -413,10 +433,12 @@ class NativeStrumSynth {
         window._omniPerf.currentVoices = this._activeVoices.length;
       }
     };
-    subOsc.onended = () => {
-      try { subEnv.disconnect(); } catch(e){}
-      window._omniPerf.nodesDestroyed += 1;
-    };
+    if (subOsc) {
+      subOsc.onended = () => {
+        try { subGainNodes[0].disconnect(); } catch(e){}
+        window._omniPerf.nodesDestroyed += 1;
+      };
+    }
   }
 
   releaseAll() {}
