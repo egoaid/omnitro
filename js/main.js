@@ -2,7 +2,7 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-console.log('%c[omnitro] build: v1.5.26 — LOW POWER時はストラムプレートの追加指（2/3本目）の発音を無効化し1本指のみに制限（音源コードは無変更）', 'color:#2ecc71;font-weight:bold;');
+console.log('%c[omnitro] build: v1.5.27 — LOW POWER専用ボイスプール（ノート毎のノード生成/破棄・setTimeout後片付けを廃止。HIGH QUALITY経路は無変更）', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

@@ -69,6 +69,20 @@ const VOICE_STEAL_FADE = 0.012;
 // HIGH QUALITY時はこのゲート自体が無効（従来と完全に同じ挙動）。
 const MIN_TRIGGER_INTERVAL_LOW = 0.022; // 秒
 
+// ── LOW POWER: ボイスプール（v1.5.27） ──────────────────────────────────────
+// 調査結果: OMNI1のリリースは約4秒あり、上限7だと1.75音/秒を超える演奏では
+// 常時voice stealになる（実測: 388ノート中367回=95%）。従来はstealのたびに
+// 「フェード＋stop＋setTimeout＋7ノード破棄」と「7ノード新規生成」の両方を
+// 毎ノート実行しており、これがUIスレッドのフレーム落ちとGC負荷の原因だった。
+// LOW POWERでは、ボイス（オシレーター2個・GainNode・フィルター群）を最初に
+// 一度だけ作って常時走らせたまま使い回し、ノートごとの生成/破棄を無くす。
+// 未使用ボイスは出力をnativeDestから外して（グラフ末端に到達しない状態に
+// して）DSP負荷ゼロにし、使うときに1本繋ぎ直すだけにする。
+// HIGH QUALITY経路（従来のノード生成方式）には一切触れない。
+const POOL_FADE = 0.006;         // 使用中ボイスを再利用する際のフェードアウト時間
+const POOL_RETRIGGER_DELAY = 0.008; // 再利用ボイスで新ノートを始めるまでの遅延
+const POOL_SWEEP_MS = 500;       // 鳴り終えたボイスを切り離す共有タイマー（1本のみ）
+
 // ── 軽量パフォーマンスカウンター ────────────────────────────────────────────
 // console.logを撒かず、診断オーバーレイ（js/perf-diagnostics.js）が任意の
 // タイミングでポーリングして読み取れるようにするための単純なカウンタ集合。
@@ -203,6 +217,7 @@ class NativeStrumSynth {
   // 関連する GainNode / フィルター等を disconnect() して音を物理的に消す。
   panic() {
     const now = this.ctx.currentTime;
+    this._panicPool(now);
 
     // ── Stage 1: 即時消音（同一サンプル精度） ────────────────────────────────
     // gain パラメータを持つノード（envGain, subEnv, mixGain 等）のみを対象に
@@ -277,6 +292,184 @@ class NativeStrumSynth {
     window._omniPerf.voicesStolen++;
   }
 
+  // ═══ LOW POWER ボイスプール ═════════════════════════════════════════════
+  // voice = { osc1, osc2, envGain, lfoDepth, out, nodes[], connected, endTime, gen }
+  _poolCreateVoice() {
+    const ctx = this.ctx;
+    const MIX1 = 0.68, MIX2 = 0.04;
+    const envGain = ctx.createGain();
+    envGain.gain.value = 0.0001;
+    const osc1 = ctx.createOscillator();
+    osc1.type = this.oscType;
+    const lfoDepth = ctx.createGain();
+    this._sharedLfo.connect(lfoDepth);
+    lfoDepth.connect(osc1.frequency);
+    osc1.connect(envGain);
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'square';
+    const mix2 = ctx.createGain();
+    mix2.gain.value = MIX2 / MIX1;
+    osc2.connect(mix2);
+    mix2.connect(envGain);
+    const nodes = [envGain, osc1, lfoDepth, osc2, mix2];
+    let out = envGain;
+    for (const def of this._mainFilters) {
+      const f = ctx.createBiquadFilter();
+      f.type = def.type || 'lowpass';
+      f.frequency.value = def.frequency || 2000;
+      f.Q.value = def.Q || def.q || 0.7;
+      out.connect(f); out = f; nodes.push(f);
+    }
+    if (this.color.drive && this.color.drive >= 0.02) {
+      const sh = ctx.createWaveShaper();
+      sh.curve = makeSaturationCurve(this.color.drive);
+      sh.oversample = '2x';
+      out.connect(sh); out = sh; nodes.push(sh);
+    }
+    // オシレーターは常時走らせたまま使い回す。out は未接続（=DSP負荷ゼロ）。
+    osc1.start(); osc2.start();
+    window._omniPerf.nodesCreated += nodes.length;
+    return { osc1, osc2, envGain, lfoDepth, out, nodes, connected: false, endTime: 0, gen: 0 };
+  }
+
+  _poolAcquire(now) {
+    const pool = this._pool || (this._pool = []);
+    // 1) 鳴り終えている（無音の）ボイスを優先
+    for (const v of pool) if (v.endTime <= now) return { v, stolen: false };
+    // 2) 上限までは新規作成（初回のみ）
+    if (pool.length < MAX_ACTIVE_VOICES_LOW) {
+      const v = this._poolCreateVoice();
+      pool.push(v);
+      return { v, stolen: false };
+    }
+    // 3) 全て使用中: 終了時刻が最も近い（=残響が最も小さい）ボイスを再利用
+    let best = pool[0];
+    for (const v of pool) if (v.endTime < best.endTime) best = v;
+    return { v: best, stolen: true };
+  }
+
+  _triggerPooled(noteStr, velocity) {
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    const { v, stolen } = this._poolAcquire(now);
+    let t = now;
+    const g = v.envGain.gain;
+    if (stolen) {
+      // 使用中ボイスの再利用: 短いフェードで無音にしてからピッチを変える（クリック防止）
+      let cur = 0.0001;
+      try { cur = Math.max(0.0001, g.value); } catch(e){}
+      g.cancelScheduledValues(now);
+      g.setValueAtTime(cur, now);
+      g.linearRampToValueAtTime(0.0001, now + POOL_FADE);
+      t = now + POOL_RETRIGGER_DELAY;
+      window._omniPerf.voicesStolen++;
+    } else {
+      g.cancelScheduledValues(now);
+    }
+
+    const freq = noteToFrequency(noteStr) * tuneRatio();
+    const peak = this.gainVal * velocity;
+    const safeAttack = Math.max(0.008, this.attack);
+    const MIX1 = 0.68;
+    const safePeak = Math.max(0.0001, peak * MIX1);
+    const sustLevel = Math.max(0.0001, safePeak * this.sustain);
+
+    v.osc1.frequency.setValueAtTime(freq, t);
+    v.osc1.detune.setValueAtTime((Math.random() - 0.5) * 1.8, t);
+    v.osc2.frequency.setValueAtTime(freq, t);
+    v.osc2.detune.setValueAtTime((Math.random() - 0.5) * 0.9, t);
+    v.lfoDepth.gain.setValueAtTime(freq * (this.color.vibratoDepth != null ? this.color.vibratoDepth : VIBRATO_DEPTH), t);
+
+    // エンベロープは従来ノード生成方式と同一の形状
+    g.setValueAtTime(0.0001, t);
+    g.exponentialRampToValueAtTime(safePeak, t + safeAttack);
+    g.linearRampToValueAtTime(sustLevel, t + safeAttack + this.decay);
+    const releaseStart = t + safeAttack + this.decay + 0.05;
+    g.setValueAtTime(sustLevel, releaseStart);
+    g.exponentialRampToValueAtTime(0.0001, releaseStart + this.release);
+
+    v.endTime = releaseStart + this.release + 0.02;
+    v.gen++;
+    if (!v.connected) {
+      v.out.connect(this.nativeDest);
+      v.connected = true;
+      this._poolStartSweeper();
+    }
+
+    const perf = window._omniPerf;
+    perf.notesTriggered++;
+    let busy = 0;
+    for (const x of this._pool) if (x.endTime > now) busy++;
+    perf.currentVoices = busy;
+    if (busy > perf.maxConcurrentVoices) perf.maxConcurrentVoices = busy;
+  }
+
+  // 鳴り終えたボイスの出力を切り離す共有タイマー（プール全体で1本のみ。
+  // 接続中のボイスが無くなれば自動停止）。ノートごとのsetTimeoutは使わない。
+  _poolStartSweeper() {
+    if (this._poolSweeper) return;
+    this._poolSweeper = setInterval(() => {
+      const now = this.ctx.currentTime;
+      let anyConnected = false, busy = 0;
+      for (const v of (this._pool || [])) {
+        if (!v.connected) continue;
+        if (v.endTime <= now) {
+          try { v.out.disconnect(); } catch(e){}
+          v.connected = false;
+        } else { anyConnected = true; busy++; }
+      }
+      window._omniPerf.currentVoices = busy;
+      if (!anyConnected) { clearInterval(this._poolSweeper); this._poolSweeper = null; }
+    }, POOL_SWEEP_MS);
+  }
+
+  _panicPool(now) {
+    const pool = this._pool;
+    if (!pool || pool.length === 0) return;
+    for (const v of pool) {
+      try {
+        v.envGain.gain.cancelScheduledValues(now);
+        v.envGain.gain.setValueAtTime(0.0001, now);
+      } catch(e){}
+      v.endTime = 0;
+      v.gen++;
+    }
+    const gens = pool.map(v => v.gen);
+    setTimeout(() => {   // プール全体で1回のみ。この間に再利用されたボイス(gen変化)は触らない
+      pool.forEach((v, i) => {
+        if (v.gen === gens[i] && v.connected) {
+          try { v.out.disconnect(); } catch(e){}
+          v.connected = false;
+        }
+      });
+    }, 100);
+    window._omniPerf.currentVoices = 0;
+  }
+
+  // ボイス切替時: 短いフェードで消してから、プール全体を1回のsetTimeoutで破棄
+  _disposePool() {
+    const pool = this._pool;
+    if (this._poolSweeper) { clearInterval(this._poolSweeper); this._poolSweeper = null; }
+    if (!pool || pool.length === 0) return;
+    this._pool = [];
+    const now = this.ctx.currentTime;
+    for (const v of pool) {
+      try {
+        v.envGain.gain.cancelScheduledValues(now);
+        v.envGain.gain.setValueAtTime(Math.max(0.0001, v.envGain.gain.value), now);
+        v.envGain.gain.linearRampToValueAtTime(0.0001, now + 0.03);
+      } catch(e){}
+    }
+    setTimeout(() => {
+      for (const v of pool) {
+        try { v.osc1.stop(); v.osc2.stop(); } catch(e){}
+        for (const n of v.nodes) { try { n.disconnect(); } catch(e){} }
+        try { v.out.disconnect(); } catch(e){}
+        window._omniPerf.nodesDestroyed += v.nodes.length;
+      }
+    }, 80);
+  }
+
   triggerAttackRelease(noteStr, velocity = 0.6) {
     const lowPower = isLowPowerMode();
     const ctx  = this.ctx;
@@ -290,6 +483,12 @@ class NativeStrumSynth {
         return;
       }
       this._lastTriggerTime = now;
+    }
+
+    // ── LOW POWER: ボイスプール経路（ノード生成/破棄なし） ──────────────────
+    if (lowPower) {
+      this._triggerPooled(noteStr, velocity);
+      return;
     }
 
     // ── 同時発音数の安全上限チェック（通常演奏では発火しない） ──────────────
@@ -491,6 +690,7 @@ class NativeStrumSynth {
 
   releaseAll() {}
   dispose() {
+    this._disposePool();
     // ボイス切替時にupdateVoice()から呼ばれる。共有LFO（update()で生成）を
     // 確実に停止・切断しないと、切り替えるたびに孤立したLFOが鳴り続けて
     // 蓄積してしまう。
