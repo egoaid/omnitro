@@ -200,6 +200,18 @@ function setupStrumplate() {
         firstFingerId = t.identifier;
         onStart(pos);
       } else {
+        // ── v1.5.26: LOW POWER時は追加指を無視（1本指のみ発音） ─────────────
+        // ユーザー提案の対策。マルチタッチで2本目・3本目が同時に鳴ると、
+        // 発音トリガー数・インジケーターDOM生成・フラッシュ演出がすべて
+        // 指の本数倍になり、iPad第7世代のような非力な端末では最も負荷が
+        // 高くなる瞬間だった。ここで`strumFingers`に一切登録せず`continue`
+        // することで、この指のtouchmove/touchendも以降すべて自然に無視
+        // される（`strumFingers.has()`チェックで弾かれるだけなので後始末も
+        // 不要）。音源生成コード（NativeStrumSynth）には一切触れていない
+        // ——単に「追加の指からの入力そのものを受け付けない」だけの変更。
+        // HIGH QUALITY時は従来通り最大3本指すべてで発音する。
+        if (isLowPowerMode()) continue;
+
         // 2本目以降: ホールドタイマーをキャンセル、全指をスライドモードへ
         cancelHoldTimer();
         if (!active) { active = true; gestureMode = 'slide'; lastArpX = pos; lastArpNote = null; }
