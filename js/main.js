@@ -2,7 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-console.log('%c[omnitro] build: v1.5.27 — LOW POWER専用ボイスプール（ノート毎のノード生成/破棄・setTimeout後片付けを廃止。HIGH QUALITY経路は無変更）', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.29';
+console.log('%c[omnitro] build: v1.5.29 — LOW POWER: ドラム1発ごとの再合成/ROOM生成をキャッシュ・省略、処理時間プロファイラ追加', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

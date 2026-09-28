@@ -158,7 +158,10 @@
   function buildStatsText() {
     const p = window._omniPerf || {};
     const ctxInfo = getCtxInfo();
+    const low = (typeof state !== 'undefined' && state.audioPerformanceMode === 'low');
     return [
+      `BUILD: ${window._omniBuild || '?'}   MODE: ${low ? 'LOW POWER' : 'HIGH QUALITY'}   STRUM PATH: ${low ? 'voice-pool (pool voices=' + (p.poolVoices||0) + ')' : 'per-note nodes'}`,
+      `RHYTHM: ${(typeof state !== 'undefined' && state.isPlaying) ? 'ON' : 'OFF'}   ` + Object.entries(window._omniProf || {}).map(([k, v]) => `${k}: n=${v.n} avg=${(v.sum / v.n).toFixed(2)}ms max=${v.max.toFixed(1)}ms`).join('   '),
       `FPS: ${fps}   MAX FRAME: ${maxFrameMs.toFixed(1)}ms`,
       `AudioContext: ${ctxInfo.state}   sampleRate=${ctxInfo.sampleRate}   baseLatency=${(ctxInfo.baseLatency*1000).toFixed(1)}ms`,
       `Voices: current=${p.currentVoices||0}   max this session=${p.maxConcurrentVoices||0}   stolen(total)=${p.voicesStolen||0}`,

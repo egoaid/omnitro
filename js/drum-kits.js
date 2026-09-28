@@ -123,6 +123,26 @@ const KIT_PARAM_OVERRIDES = {
   },
 };
 
+// ── LOW POWER用: ドラム1発ごとの再合成/再計算のキャッシュ（v1.5.29） ─────────────
+// 調査結果: _drumPlayBuf は1発ごとに、shkr(最大約2秒=約8.8万サンプル)/clap の波形再合成、
+// WaveShaperの256点カーブ再計算、ROOM用ConvolverNodeの新規生成をメインスレッドで
+// 同期実行していた（デスクトップでもshkr約3.2ms+clap約1.3ms、iPad第7世代では
+// 数倍）。1ステップに複数のドラムが重なると50〜100ms級のブロックになりフレーム落ち・
+// 発音遅延の原因になる。LOW POWER時のみ、同じパラメータなら結果を再利用する
+// （キャッシュ＝出力は同一。HIGH QUALITYは従来のコードのまま）。
+const _lpBufCache = new WeakMap();   // srcBuf -> Map(key -> AudioBuffer)
+function lpBufGet(srcBuf, key) { const m = _lpBufCache.get(srcBuf); return m ? m.get(key) : undefined; }
+function lpBufSet(srcBuf, key, out) {
+  let m = _lpBufCache.get(srcBuf);
+  if (!m) { m = new Map(); _lpBufCache.set(srcBuf, m); }
+  if (m.size > 24) m.clear();        // スライダー操作中の際限ない増加を防ぐ
+  m.set(key, out);
+}
+const _lpDriveCurves = new Map();    // driveAmt(丸め) -> Float32Array
+// ROOM(ドラム毎のConvolverNode新規生成)をLOW POWERでは省略する。ドライ音量は
+// 従来の (1 - room*0.4) を維持するので、失われるのは短いルーム残響（最大約8%）のみ。
+const LP_DRUM_ROOM = false;
+
 function initDrums(kitName) {
   const ctx = Tone.getContext().rawContext;
   kitName = kitName || currentDrumKit;
@@ -150,6 +170,8 @@ function initDrums(kitName) {
   // チェーン: src → transientGain → attackGain → LPF → HPF → drive → room → panner → drumGain
   _drumPlayBuf = function(buf, gainVal, time, ch) {
     if (!buf) return;
+    const _dt0 = performance.now();
+    const lp = isLowPowerMode();
     const p = kitEditParams[ch] || KIT_EDIT_DEFAULTS[ch] || {};
 
     // ── TAMB専用: DECAYスライダー値でMS-20エンベロープを再合成 ───────────
@@ -158,7 +180,11 @@ function initDrums(kitName) {
     // そこでDECAYスライダーに連動してGainエンベロープをバッファに直接焼き込み、
     // playbackRateは常に1.0固定とする。
     let activeBuf = buf;
-    if ((ch === 'tamb' || ch === 'shkr') && buf) {
+    const _tsKey = ((ch === 'tamb' || ch === 'shkr') && buf && lp) ? ('ts' + Math.max(50, p.decay ?? 500)) : null;
+    const _tsHit = _tsKey ? lpBufGet(buf, _tsKey) : undefined;
+    if (_tsHit) {
+      activeBuf = _tsHit;
+    } else if ((ch === 'tamb' || ch === 'shkr') && buf) {
       const decayMs  = Math.max(50, p.decay ?? 500);
       const decayK   = 1 / (decayMs / 1000);  // 時定数
       const newDur   = Math.max(0.3, (decayMs / 1000) * 4.0); // 十分な長さ
@@ -177,11 +203,18 @@ function initDrums(kitName) {
       if (pk > 0.001) { const g = 0.92 / pk; for (let i = 0; i < newLen; i++) tData[i] *= g; }
       activeBuf = ctx.createBuffer(1, newLen, ctx.sampleRate);
       activeBuf.copyToChannel(tData, 0);
+      if (_tsKey) lpBufSet(buf, _tsKey, activeBuf);
     }
 
     // ── CLAP専用: 3山エンベロープを現在のパラメータでリアルタイム合成 ──────
     // clap_spread / clap_peaks / clap_tail が変わるたびに正しい波形を生成
-    if (ch === 'clap') {
+    const _cKey = (ch === 'clap' && lp)
+      ? ('c' + Math.max(3, p.clap_spread ?? 7) + '|' + Math.max(2, Math.min(5, Math.round(p.clap_peaks ?? 3))) + '|' + (p.clap_tail ?? 35))
+      : null;
+    const _cHit = _cKey ? lpBufGet(buf, _cKey) : undefined;
+    if (_cHit) {
+      activeBuf = _cHit;
+    } else if (ch === 'clap') {
       const spread = Math.max(3, p.clap_spread ?? 7);   // ms
       const nPeaks = Math.max(2, Math.min(5, Math.round(p.clap_peaks ?? 3)));
       const tailPct = (p.clap_tail ?? 35) / 100;
@@ -224,6 +257,7 @@ function initDrums(kitName) {
 
       activeBuf = ctx.createBuffer(1, cLen, ctx.sampleRate);
       activeBuf.copyToChannel(cData, 0);
+      if (_cKey) lpBufSet(buf, _cKey, activeBuf);
     }
 
     // ── 基本パラメータ ─────────────────────────────────────────────────────
@@ -302,10 +336,15 @@ function initDrums(kitName) {
     if (driveAmt > 0.01) {
       const shaper = ctx.createWaveShaper();
       const k = driveAmt * 12;
-      const curve = new Float32Array(256);
-      for (let i = 0; i < 256; i++) {
-        const x = i * 2 / 255 - 1;
-        curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
+      const _dKey = Math.round(driveAmt * 1000);
+      let curve = lp ? _lpDriveCurves.get(_dKey) : undefined;
+      if (!curve) {
+        curve = new Float32Array(256);
+        for (let i = 0; i < 256; i++) {
+          const x = i * 2 / 255 - 1;
+          curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
+        }
+        if (lp) { if (_lpDriveCurves.size > 64) _lpDriveCurves.clear(); _lpDriveCurves.set(_dKey, curve); }
       }
       shaper.curve = curve;
       shaper.oversample = '2x';
@@ -319,7 +358,13 @@ function initDrums(kitName) {
 
     // ── ROOM（軽量コンボリューションリバーブ） ────────────────────────────────
     const roomAmt = (p.room ?? 0) / 100;
-    if (roomAmt > 0.01) {
+    if (roomAmt > 0.01 && lp && !LP_DRUM_ROOM) {
+      // LOW POWER: ConvolverNodeを作らず、ドライ音量だけ従来と同じ (1 - room*0.4) に揃える
+      const roomComp = ctx.createGain();
+      roomComp.gain.value = 1.0 - roomAmt * 0.4;
+      lastNode.connect(roomComp);
+      lastNode = roomComp;
+    } else if (roomAmt > 0.01) {
       // ルームIR: 短いランダムノイズ (10〜80ms)
       const roomMs  = 10 + roomAmt * 70;
       const roomLen = Math.floor(ctx.sampleRate * roomMs / 1000);
@@ -357,6 +402,7 @@ function initDrums(kitName) {
       src.start(time);
     }
     // envGain は自然に消音するのでdisconnectはGCに任せる
+    omniProfEnd('drum-hit', _dt0);
   };
   const playBuf = _drumPlayBuf;
 

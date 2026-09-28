@@ -88,6 +88,14 @@ const POOL_SWEEP_MS = 500;       // 鳴り終えたボイスを切り離す共�
 // タイミングでポーリングして読み取れるようにするための単純なカウンタ集合。
 // 加算のみでコストは無視できるレベル。診断オーバーレイを一度も開かなくても
 // このカウンタ自体のオーバーヘッドは実質ゼロ。
+// ── 処理時間の簡易プロファイラ（診断モニター表示用。performance.now()2回のみで軽量） ──
+window._omniProf = window._omniProf || {};
+function omniProfEnd(name, t0) {
+  const d = performance.now() - t0;
+  const s = window._omniProf[name] || (window._omniProf[name] = { n: 0, sum: 0, max: 0 });
+  s.n++; s.sum += d; if (d > s.max) s.max = d;
+}
+
 window._omniPerf = window._omniPerf || {
   notesTriggered: 0,
   voicesStolen: 0,
@@ -329,6 +337,7 @@ class NativeStrumSynth {
     // オシレーターは常時走らせたまま使い回す。out は未接続（=DSP負荷ゼロ）。
     osc1.start(); osc2.start();
     window._omniPerf.nodesCreated += nodes.length;
+    window._omniPerf.poolVoices = (window._omniPerf.poolVoices || 0) + 1;
     return { osc1, osc2, envGain, lfoDepth, out, nodes, connected: false, endTime: 0, gen: 0 };
   }
 
@@ -349,6 +358,7 @@ class NativeStrumSynth {
   }
 
   _triggerPooled(noteStr, velocity) {
+    const _pt0 = performance.now();
     const ctx = this.ctx;
     const now = ctx.currentTime;
     const { v, stolen } = this._poolAcquire(now);
@@ -402,6 +412,7 @@ class NativeStrumSynth {
     for (const x of this._pool) if (x.endTime > now) busy++;
     perf.currentVoices = busy;
     if (busy > perf.maxConcurrentVoices) perf.maxConcurrentVoices = busy;
+    omniProfEnd('strum-trigger', _pt0);
   }
 
   // 鳴り終えたボイスの出力を切り離す共有タイマー（プール全体で1本のみ。
@@ -466,6 +477,7 @@ class NativeStrumSynth {
         for (const n of v.nodes) { try { n.disconnect(); } catch(e){} }
         try { v.out.disconnect(); } catch(e){}
         window._omniPerf.nodesDestroyed += v.nodes.length;
+        window._omniPerf.poolVoices = Math.max(0, (window._omniPerf.poolVoices || 0) - 1);
       }
     }, 80);
   }

@@ -658,6 +658,12 @@ function applyEditorPatternRTDeferred() {
 // ── 再生時グリッド点灯（ピアノロールに縦線） ──────────────────────────────────
 function gridHighlightStep(si) {
   prActiveStep = si;
+  // LOW POWER: リズムエディターが閉じている間は見えないキャンバスを毎ステップ
+  // 全再描画しない（一度でもエディターを開くと再生中ずっと描画され続けていた）
+  if (isLowPowerMode()) {
+    const ov = document.getElementById('rhythm-editor-overlay');
+    if (!ov || !ov.classList.contains('open')) return;
+  }
   if (prCtx) prDrawImpl();
 }
 

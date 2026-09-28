@@ -229,6 +229,7 @@ function setupStrumplate() {
   sp.addEventListener('touchmove', e => {
     e.preventDefault();
     const ts = performance.now();
+    const _tm0 = ts;
     for (const t of e.changedTouches) {
       if (!strumFingers.has(t.identifier)) continue;
       const finger = strumFingers.get(t.identifier);
@@ -260,6 +261,7 @@ function setupStrumplate() {
         }
       }
     }
+    omniProfEnd('touchmove', _tm0);
   }, { passive: false });
 
   sp.addEventListener('touchend', e => {
