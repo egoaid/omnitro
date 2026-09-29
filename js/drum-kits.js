@@ -143,6 +143,114 @@ const _lpDriveCurves = new Map();    // driveAmt(丸め) -> Float32Array
 // 従来の (1 - room*0.4) を維持するので、失われるのは短いルーム残響（最大約8%）のみ。
 const LP_DRUM_ROOM = false;
 
+// ── LOW POWER: ドラムのチャンネル別・常設エフェクトチェーン（v1.5.30） ─────────
+// 実機ログ(v1.5.29)より: drum-hit 平均2.7ms/最大62ms。ストラム側(strum-trigger 平均0.13ms)は
+// ボイスプールで十分軽いが、ドラムは1発ごとに ソース+エンベロープ+LPF+HPF+WaveShaper(2x)
+// +補正ゲイン+パンナー の約8ノードを生成・接続していた。メインスレッドのノード生成/接続は
+// オーディオスレッドとグラフのロックを取り合うため、ここがUIのブロックと音切れの原因になる。
+// LOW POWERでは チャンネルごとに フィルター〜パンナーのチェーンを1本だけ常設し、
+// 1発ごとに作るのは ソース+エンベロープ の2ノードだけにする。
+// パラメータ(LPF/HPF/DRIVE/ROOM補正/PAN)は毎ヒットで値が変わっていれば更新する。
+// 段の有無(LPF有/HPF有/DRIVE有/ROOM有/PAN有)が変わった場合のみチェーンを作り直す。
+// 音の違い: 同一チャンネルの重なったヒットが同じWaveShaperを通る（DRIVEの非線形が
+// 重なり部分で合算に掛かる）。フィルターは線形なので影響なし。
+const _lpDrumChains = {};
+function _lpBuildDrumChain(ctx, has) {
+  const nodes = [];
+  const inNode = ctx.createGain(); nodes.push(inNode);
+  let last = inNode;
+  const c = { inNode, nodes, cache: {}, dest: drumGain };
+  const link = n => { last.connect(n); last = n; nodes.push(n); return n; };
+  if (has.lpf)   { c.lpf = link(ctx.createBiquadFilter()); c.lpf.type = 'lowpass'; }
+  if (has.hpf)   { c.hpf = link(ctx.createBiquadFilter()); c.hpf.type = 'highpass'; c.hpf.Q.value = 0.5; }
+  if (has.drive) {
+    c.shaper = link(ctx.createWaveShaper()); c.shaper.oversample = '2x';
+    c.driveComp = link(ctx.createGain());
+  }
+  if (has.room)  c.roomComp = link(ctx.createGain());
+  if (has.pan)   c.panner = link(ctx.createStereoPanner());
+  last.connect(drumGain);
+  c.out = last;
+  return c;
+}
+function _lpDisposeDrumChain(c) {
+  try { c.inNode.disconnect(); } catch(e){}   // 新規ヒットの入力を止める。残響は自然に減衰
+  setTimeout(() => { for (const n of c.nodes) { try { n.disconnect(); } catch(e){} } }, 1500);
+}
+function _lpDrumChain(ctx, ch, p) {
+  const lpfFreq  = Math.max(200, Math.min(20000, p.lpf ?? 20000));
+  const hpfFreq  = Math.max(20, Math.min(2000, p.hpf ?? 20));
+  const driveAmt = (p.drive ?? 0) / 100;
+  const roomAmt  = (p.room ?? 0) / 100;
+  const panVal   = (p.pan ?? 0) / 100;
+  const has = { lpf: lpfFreq < 19000, hpf: hpfFreq > 25, drive: driveAmt > 0.01,
+                room: roomAmt > 0.01, pan: Math.abs(panVal) > 0.01 };
+  const sig = '' + (has.lpf?1:0) + (has.hpf?1:0) + (has.drive?1:0) + (has.room?1:0) + (has.pan?1:0);
+  let c = _lpDrumChains[ch];
+  if (!c || c.sig !== sig || c.dest !== drumGain) {
+    if (c) _lpDisposeDrumChain(c);
+    c = _lpBuildDrumChain(ctx, has); c.sig = sig; _lpDrumChains[ch] = c;
+  }
+  const setv = (key, param, v) => { if (c.cache[key] !== v) { param.value = v; c.cache[key] = v; } };
+  if (c.lpf) { setv('lf', c.lpf.frequency, lpfFreq); setv('lq', c.lpf.Q, (p.lpfQ ?? 5) / 10); }
+  if (c.hpf) setv('hf', c.hpf.frequency, hpfFreq);
+  if (c.shaper) {
+    const dKey = Math.round(driveAmt * 1000);
+    if (c.cache.dk !== dKey) {
+      let curve = _lpDriveCurves.get(dKey);
+      if (!curve) {
+        const k = driveAmt * 12;
+        curve = new Float32Array(256);
+        for (let i = 0; i < 256; i++) { const x = i * 2 / 255 - 1; curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x)); }
+        if (_lpDriveCurves.size > 64) _lpDriveCurves.clear();
+        _lpDriveCurves.set(dKey, curve);
+      }
+      c.shaper.curve = curve; c.cache.dk = dKey;
+    }
+    setv('dc', c.driveComp.gain, 1.0 / (1 + driveAmt * 0.5));
+  }
+  if (c.roomComp) setv('rc', c.roomComp.gain, 1.0 - roomAmt * 0.4);
+  if (c.panner)   setv('pn', c.panner.pan, Math.max(-1, Math.min(1, panVal)));
+  return c;
+}
+// 1発分: ソース+エンベロープの2ノードだけを生成して常設チェーンへ繋ぐ
+function _lpDrumHit(ctx, activeBuf, p, lvl, time, ch) {
+  const chain = _lpDrumChain(ctx, ch, p);
+  const tune     = p.tune  ?? 0;
+  const pitchEnv = p.pitch_env ?? 0;
+  const attackMs = Math.max(0, p.attack ?? 1);
+  const decayMs  = Math.max(20, p.decay  ?? 200);
+  const rate = Math.pow(2, tune / 12);
+  const src = ctx.createBufferSource();
+  src.buffer = activeBuf;
+  src.playbackRate.value = Math.max(0.1, Math.min(4.0, rate));
+  if (Math.abs(pitchEnv) > 0.5 && ch !== 'tamb' && ch !== 'shkr') {
+    const startRate = rate * Math.pow(2, pitchEnv / 12);
+    src.playbackRate.setValueAtTime(Math.max(0.1, startRate), time);
+    src.playbackRate.exponentialRampToValueAtTime(
+      Math.max(0.1, rate), time + Math.max(0.001, decayMs * 0.001 * 0.6));
+  }
+  const envGain = ctx.createGain();
+  const atk = Math.max(0.0005, attackMs / 1000);
+  const dec = Math.max(0.005,  decayMs  / 1000);
+  envGain.gain.setValueAtTime(0.0001, time);
+  envGain.gain.linearRampToValueAtTime(lvl, time + atk);
+  envGain.gain.exponentialRampToValueAtTime(0.0001, time + atk + dec);
+  const transAmt = (p.transient ?? 0) / 100;
+  if (transAmt > 0.01) {
+    const transSpike = lvl * (1 + transAmt * 1.8);
+    envGain.gain.cancelScheduledValues(time);
+    envGain.gain.setValueAtTime(0.0001, time);
+    envGain.gain.linearRampToValueAtTime(transSpike, time + Math.min(atk * 0.25, 0.003));
+    envGain.gain.exponentialRampToValueAtTime(lvl, time + atk);
+    envGain.gain.exponentialRampToValueAtTime(0.0001, time + atk + dec);
+  }
+  src.connect(envGain);
+  envGain.connect(chain.inNode);
+  src.start(time);
+  src.onended = () => { try { envGain.disconnect(); } catch(e){} };
+}
+
 function initDrums(kitName) {
   const ctx = Tone.getContext().rawContext;
   kitName = kitName || currentDrumKit;
@@ -270,6 +378,13 @@ function initDrums(kitName) {
 
     // tune: playbackRate で半音単位ピッチ変更（decayとは独立）
     const rate = Math.pow(2, tune / 12);
+
+    // ── LOW POWER: 常設チェーン経路（ノード生成2個/発）。ROOM復活時は従来経路へ ──
+    if (lp && !LP_DRUM_ROOM) {
+      _lpDrumHit(ctx, activeBuf, p, lvl, time, ch);
+      omniProfEnd('drum-hit', _dt0);
+      return;
+    }
 
     // ── ソース ────────────────────────────────────────────────────────────
     const src = ctx.createBufferSource();

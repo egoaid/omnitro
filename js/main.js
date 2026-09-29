@@ -2,8 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-window._omniBuild = 'v1.5.29';
-console.log('%c[omnitro] build: v1.5.29 — LOW POWER: ドラム1発ごとの再合成/ROOM生成をキャッシュ・省略、処理時間プロファイラ追加', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.30';
+console.log('%c[omnitro] build: v1.5.30 — LOW POWER: ドラムのチャンネル別エフェクトチェーンを常設化（1発あたりのノード生成を約8個→2個に削減）', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();
