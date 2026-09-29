@@ -60,6 +60,7 @@ function setupStrumplate() {
   async function onStart(pos) {
     if (!state.selectedRoot) return;
     await ensureAudio();
+    const _os0 = performance.now(); // v1.5.32: await後（microtask後）の実処理を計測
     updateRect();
     active = true;
     startPos = pos; startTime = Date.now(); totalMove = 0;
@@ -80,6 +81,7 @@ function setupStrumplate() {
       lastArpNote = note;   // 発音したノートを記録
       spawnFlashColored(pos, 0);
     }
+    omniProfEnd('onStart', _os0);
   }
 
   async function onMove(pos) {
@@ -158,6 +160,8 @@ function setupStrumplate() {
   // ── パフォーマンス: DOM要素はstrumplate-core.jsの共有プールを再利用する
   //    （高速ストラム/マルチタッチ時のDOM生成・破棄churnを削減）。
   function spawnFlashColored(pos, colorIdx) {
+    if (isLowPowerMode()) return; // v1.5.32: LOW POWERは演出を省略（音には無関係）
+    const _ft0 = performance.now();
     const c = FINGER_COLORS[colorIdx] || FINGER_COLORS[0];
     const dot = _acquireFlashEl(sp);
     dot.style.background = `rgba(${c.rgb},0.9)`;
@@ -171,6 +175,7 @@ function setupStrumplate() {
       dot.style.top  = (rect.height * 0.5) + 'px';
     }
     _playFlash(dot);
+    omniProfEnd('flash', _ft0);
   }
 
   function playAtPos(pos, velocity, colorIdx, finger) {
@@ -187,6 +192,7 @@ function setupStrumplate() {
 
   sp.addEventListener('touchstart', e => {
     e.preventDefault();
+    const _ts0 = performance.now(); // v1.5.32: touchstart全体の実測（従来未計測だった盲点）
     updateRect();
     for (const t of e.changedTouches) {
       const pos = getPos(t.clientX, t.clientY);
@@ -224,6 +230,7 @@ function setupStrumplate() {
         ensureAudio().then(() => playAtPos(pos, 0.6, colorIdx, finger));
       }
     }
+    omniProfEnd('touchstart', _ts0);
   }, { passive: false });
 
   sp.addEventListener('touchmove', e => {

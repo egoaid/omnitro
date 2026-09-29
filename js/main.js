@@ -2,8 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-window._omniBuild = 'v1.5.31';
-console.log('%c[omnitro] build: v1.5.31 — LOW POWER: ドラムのエンベロープGainNodeもチャンネル毎に使い回し（1発あたりの新規ノードを2個→1個に）＋shkr/clap再合成キャッシュをキット読み込み時に前倒し', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.32';
+console.log('%c[omnitro] build: v1.5.32 — LOW POWER: フラッシュ演出を省略（音には無関係）＋touchstart/onStart/strumSlide/flashの実測カテゴリを追加（これまで未計測だった盲点）', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

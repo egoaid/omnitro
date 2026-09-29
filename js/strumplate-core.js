@@ -39,9 +39,11 @@ function _playFlash(el) {
   requestAnimationFrame(() => { el.style.animationName = ''; });
 }
 
+let _spEl = null; // document.getElementById('strumplate')のキャッシュ（毎ノート判定での再検索を避ける）
 function getNoteAtPos(clientPos, rect) {
   // vertical strumplate: use Y axis (top=high, bottom=low)
-  const isVertical = document.getElementById('strumplate').classList.contains('vertical');
+  if (!_spEl) _spEl = document.getElementById('strumplate');
+  const isVertical = _spEl.classList.contains('vertical');
   let pos;
   if (isVertical) {
     pos = Math.max(0, Math.min(1, 1 - (clientPos / rect.height)));
@@ -51,19 +53,27 @@ function getNoteAtPos(clientPos, rect) {
   return getArpeggioNotes(state.selectedRoot, state.selectedType, pos);
 }
 
+// v1.5.32: LOW POWERではフラッシュ演出そのものを省略する（純粋な演出のみで
+// 音には一切関与しないため、これで削れる分は完全に無音響リスクの追加削減）。
+// あわせてフラッシュ処理そのものの実測（'flash'カテゴリ）を追加し、touchmove/
+// strum-triggerでは捕捉できていなかった「光る演出」のコストを可視化する。
 function spawnFlash(x, y, rect) {
-  const sp = document.getElementById('strumplate');
-  const dot = _acquireFlashEl(sp);
+  if (isLowPowerMode()) return;
+  const _ft0 = performance.now();
+  if (!_spEl) _spEl = document.getElementById('strumplate');
+  const dot = _acquireFlashEl(_spEl);
   dot.style.background = '';
   dot.style.boxShadow = '';
   dot.style.left = x + 'px';
   dot.style.top = (Math.random() * rect.height * 0.7 + rect.height * 0.15) + 'px';
   _playFlash(dot);
+  omniProfEnd('flash', _ft0);
 }
 
 async function strumSlide(pos, rect) {
   if (!state.selectedRoot) return;
   await ensureAudio();
+  const _ss0 = performance.now(); // v1.5.32: await後（microtask後）の実処理を計測
   if (Math.abs(pos - lastArpX) > STRUM_THRESHOLD) {
     const note = getNoteAtPos(pos, rect);
     // ノートが変化していない場合は発音しない（重複トリガー防止）
@@ -80,5 +90,6 @@ async function strumSlide(pos, rect) {
       lastArpX = pos;
     }
   }
+  omniProfEnd('strumSlide', _ss0);
 }
 
