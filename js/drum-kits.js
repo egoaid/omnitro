@@ -142,6 +142,8 @@ const _lpDriveCurves = new Map();    // driveAmt(丸め) -> Float32Array
 // ROOM(ドラム毎のConvolverNode新規生成)をLOW POWERでは省略する。ドライ音量は
 // 従来の (1 - room*0.4) を維持するので、失われるのは短いルーム残響（最大約8%）のみ。
 const LP_DRUM_ROOM = false;
+const LP_DRUM_GAIN_POOL_SIZE = 3;  // チャンネルごとに使い回すエンベロープ用GainNodeの数
+const LP_DRUM_STEAL_FADE = 0.004;  // プール枯渇時、再利用前に無音化するフェード時間
 
 // ── LOW POWER: ドラムのチャンネル別・常設エフェクトチェーン（v1.5.30） ─────────
 // 実機ログ(v1.5.29)より: drum-hit 平均2.7ms/最大62ms。ストラム側(strum-trigger 平均0.13ms)は
@@ -159,7 +161,7 @@ function _lpBuildDrumChain(ctx, has) {
   const nodes = [];
   const inNode = ctx.createGain(); nodes.push(inNode);
   let last = inNode;
-  const c = { inNode, nodes, cache: {}, dest: drumGain };
+  const c = { inNode, nodes, cache: {}, dest: drumGain, gainPool: [] };
   const link = n => { last.connect(n); last = n; nodes.push(n); return n; };
   if (has.lpf)   { c.lpf = link(ctx.createBiquadFilter()); c.lpf.type = 'lowpass'; }
   if (has.hpf)   { c.hpf = link(ctx.createBiquadFilter()); c.hpf.type = 'highpass'; c.hpf.Q.value = 0.5; }
@@ -175,7 +177,8 @@ function _lpBuildDrumChain(ctx, has) {
 }
 function _lpDisposeDrumChain(c) {
   try { c.inNode.disconnect(); } catch(e){}   // 新規ヒットの入力を止める。残響は自然に減衰
-  setTimeout(() => { for (const n of c.nodes) { try { n.disconnect(); } catch(e){} } }, 1500);
+  const allNodes = c.nodes.concat((c.gainPool || []).map(g => g.gain));
+  setTimeout(() => { for (const n of allNodes) { try { n.disconnect(); } catch(e){} } }, 1500);
 }
 function _lpDrumChain(ctx, ch, p) {
   const lpfFreq  = Math.max(200, Math.min(20000, p.lpf ?? 20000));
@@ -213,9 +216,43 @@ function _lpDrumChain(ctx, ch, p) {
   if (c.panner)   setv('pn', c.panner.pan, Math.max(-1, Math.min(1, panVal)));
   return c;
 }
-// 1発分: ソース+エンベロープの2ノードだけを生成して常設チェーンへ繋ぐ
+// チャンネルの常設チェーンから、いま空いているエンベロープ用GainNodeを1つ
+// 確保する（無ければ最大LP_DRUM_GAIN_POOL_SIZE個まで新規作成、それも埋まって
+// いれば最も早く空く予定のものを短いフェードで無音化してから再利用する——
+// ストラムのボイスプールと同じ「steal」パターン）。GainNode自体は
+// chain.inNodeへ一度だけ接続したまま使い回すため、通常時は1発ごとに
+// BufferSourceだけを新規生成すればよい。
+function _lpAcquireGain(ctx, chain, now) {
+  const pool = chain.gainPool;
+  for (const slot of pool) if (slot.busyUntil <= now) return slot;
+  if (pool.length < LP_DRUM_GAIN_POOL_SIZE) {
+    const gain = ctx.createGain();
+    gain.gain.value = 0.0001;
+    gain.connect(chain.inNode);
+    const slot = { gain, busyUntil: 0 };
+    pool.push(slot);
+    return slot;
+  }
+  let best = pool[0];
+  for (const slot of pool) if (slot.busyUntil < best.busyUntil) best = slot;
+  // 使用中のものを再利用する場合のみ短いフェードで無音化（クリック防止）
+  const g = best.gain.gain;
+  let cur = 0.0001;
+  try { cur = Math.max(0.0001, g.value); } catch(e){}
+  g.cancelScheduledValues(now);
+  g.setValueAtTime(cur, now);
+  g.linearRampToValueAtTime(0.0001, now + LP_DRUM_STEAL_FADE);
+  return best;
+}
+
+// 1発分: ソース（BufferSource）だけを新規生成し、常設チェーンの再利用可能な
+// エンベロープ用GainNodeへ接続する（通常時は新規ノード生成が1発あたり1個だけ）。
 function _lpDrumHit(ctx, activeBuf, p, lvl, time, ch) {
   const chain = _lpDrumChain(ctx, ch, p);
+  const now = ctx.currentTime;
+  const slot = _lpAcquireGain(ctx, chain, now);
+  const stolen = slot.busyUntil > now;
+  if (stolen) time = Math.max(time, now + LP_DRUM_STEAL_FADE + 0.002); // フェードが終わってから次を開始
   const tune     = p.tune  ?? 0;
   const pitchEnv = p.pitch_env ?? 0;
   const attackMs = Math.max(0, p.attack ?? 1);
@@ -230,7 +267,7 @@ function _lpDrumHit(ctx, activeBuf, p, lvl, time, ch) {
     src.playbackRate.exponentialRampToValueAtTime(
       Math.max(0.1, rate), time + Math.max(0.001, decayMs * 0.001 * 0.6));
   }
-  const envGain = ctx.createGain();
+  const envGain = slot.gain; // 常設プールから再利用（新規GainNode生成なし）
   const atk = Math.max(0.0005, attackMs / 1000);
   const dec = Math.max(0.005,  decayMs  / 1000);
   envGain.gain.setValueAtTime(0.0001, time);
@@ -246,9 +283,9 @@ function _lpDrumHit(ctx, activeBuf, p, lvl, time, ch) {
     envGain.gain.exponentialRampToValueAtTime(0.0001, time + atk + dec);
   }
   src.connect(envGain);
-  envGain.connect(chain.inNode);
+  slot.busyUntil = time + atk + dec + 0.05;
   src.start(time);
-  src.onended = () => { try { envGain.disconnect(); } catch(e){} };
+  src.onended = () => { try { src.disconnect(); } catch(e){} };
 }
 
 function initDrums(kitName) {
@@ -532,6 +569,18 @@ function initDrums(kitName) {
   shkrSynth  = kit.shkr  ? { trigger(t, v=0.65){ playBuf(kit.shkr,  v, t||ctx.currentTime, 'shkr');  } } : null;
 
   currentDrumKit = kitName;
+
+  // ── v1.5.31: LOW POWER時、shkr/clapの波形再合成コストを前倒しで払っておく ──
+  // 実機ログで drum-hit の平均は改善したが最大値だけ約60msのまま残っていた。
+  // これはshkr/clapの初回ヒット時（キャッシュが空の時）にのみ発生する波形
+  // 再合成コストで、演奏中に1回だけ突発的に発生していた。ここで音量0の
+  // 無音ヒットとして_drumPlayBufを実行し（実際の発音経路と完全に同一の
+  // コードでキャッシュを埋める＝二重実装・出力の食い違いのリスクなし）、
+  // このコストをキット読み込み時（自然な区切り）に前倒しする。
+  if (isLowPowerMode()) {
+    if (kit.shkr) _drumPlayBuf(kit.shkr, 0, ctx.currentTime, 'shkr');
+    if (kit.clap) _drumPlayBuf(kit.clap, 0, ctx.currentTime, 'clap');
+  }
 
   // KIT select のUI同期（settings + rhythm editor）
   ['kit-select-settings','kit-select-reditor','kit-select-editor'].forEach(selId => {
