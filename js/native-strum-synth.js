@@ -341,27 +341,32 @@ class NativeStrumSynth {
     return { osc1, osc2, envGain, lfoDepth, out, nodes, connected: false, endTime: 0, gen: 0 };
   }
 
+  // v1.5.33: 毎ノートで {v, stolen} のラッパーオブジェクトを新規生成していたのを
+  // 廃止し、ボイス自体（既存オブジェクトの再利用）だけを返すようにした。
+  // stolen判定は呼び出し側で `v.endTime > now` を見るだけで済む（等価）。
+  // GCに渡す新規オブジェクトを1ノートあたり1個減らす、純粋な割り当て削減。
   _poolAcquire(now) {
     const pool = this._pool || (this._pool = []);
     // 1) 鳴り終えている（無音の）ボイスを優先
-    for (const v of pool) if (v.endTime <= now) return { v, stolen: false };
+    for (const v of pool) if (v.endTime <= now) return v;
     // 2) 上限までは新規作成（初回のみ）
     if (pool.length < MAX_ACTIVE_VOICES_LOW) {
       const v = this._poolCreateVoice();
       pool.push(v);
-      return { v, stolen: false };
+      return v;
     }
     // 3) 全て使用中: 終了時刻が最も近い（=残響が最も小さい）ボイスを再利用
     let best = pool[0];
     for (const v of pool) if (v.endTime < best.endTime) best = v;
-    return { v: best, stolen: true };
+    return best;
   }
 
   _triggerPooled(noteStr, velocity) {
     const _pt0 = performance.now();
     const ctx = this.ctx;
     const now = ctx.currentTime;
-    const { v, stolen } = this._poolAcquire(now);
+    const v = this._poolAcquire(now);
+    const stolen = v.endTime > now; // v1.5.33: ラッパーオブジェクトなしで同じ判定
     let t = now;
     const g = v.envGain.gain;
     if (stolen) {

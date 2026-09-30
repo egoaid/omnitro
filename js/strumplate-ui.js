@@ -194,7 +194,8 @@ function setupStrumplate() {
     e.preventDefault();
     const _ts0 = performance.now(); // v1.5.32: touchstart全体の実測（従来未計測だった盲点）
     updateRect();
-    for (const t of e.changedTouches) {
+    for (let _ti = 0; _ti < e.changedTouches.length; _ti++) {
+      const t = e.changedTouches[_ti];
       const pos = getPos(t.clientX, t.clientY);
       const colorIdx = strumFingers.size % FINGER_COLORS.length;
 
@@ -237,7 +238,8 @@ function setupStrumplate() {
     e.preventDefault();
     const ts = performance.now();
     const _tm0 = ts;
-    for (const t of e.changedTouches) {
+    for (let _ti = 0; _ti < e.changedTouches.length; _ti++) {
+      const t = e.changedTouches[_ti];
       if (!strumFingers.has(t.identifier)) continue;
       const finger = strumFingers.get(t.identifier);
       const isFirst = t.identifier === firstFingerId;
@@ -273,7 +275,8 @@ function setupStrumplate() {
 
   sp.addEventListener('touchend', e => {
     e.preventDefault();
-    for (const t of e.changedTouches) {
+    for (let _ti = 0; _ti < e.changedTouches.length; _ti++) {
+      const t = e.changedTouches[_ti];
       if (!strumFingers.has(t.identifier)) continue;
       const pos = getPos(t.clientX, t.clientY);
       const finger = strumFingers.get(t.identifier);
@@ -300,7 +303,8 @@ function setupStrumplate() {
 
   sp.addEventListener('touchcancel', e => {
     e.preventDefault();
-    for (const t of e.changedTouches) {
+    for (let _ti = 0; _ti < e.changedTouches.length; _ti++) {
+      const t = e.changedTouches[_ti];
       if (!strumFingers.has(t.identifier)) continue;
       const finger = strumFingers.get(t.identifier);
       if (finger.indicatorEl) removeIndicatorEl(finger.indicatorEl);

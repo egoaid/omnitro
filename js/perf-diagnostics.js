@@ -35,6 +35,15 @@
   let maxFrameMs = 0;
   let lastJankLogTime = 0;
 
+  // v1.5.33: rAFとは独立した「心拍」タイマー。rAFはvsync/描画パイプラインに
+  // 紐づくため、rAFの遅延だけでは「描画固有の問題」か「メインスレッド全体の
+  // ブロック（GC等）」かを区別できない。setIntervalは描画から独立して
+  // スケジュールされるため、両方で同程度の遅延が出れば「メインスレッド全体
+  // がブロックされている」ことの強い証拠になる。
+  let lastHeartbeatTime = 0;
+  let lastHeartbeatLogTime = 0;
+  let heartbeatId = null;
+
   let lastStolenCount = 0;
   let lastStolenLogTime = 0;
 
@@ -220,6 +229,22 @@
     rafId = requestAnimationFrame(rafLoop);
   }
 
+  // v1.5.33: 20ms間隔のsetInterval「心拍」。理想的には毎回ほぼ20msの間隔になる。
+  // これが50ms以上開いた場合、rAFの遅延と同時に起きているかどうかで原因を
+  // 切り分けられる（両方遅れる＝メインスレッド全体の問題／rAFだけ遅れる＝
+  // 描画パイプライン固有の問題）。
+  function heartbeatLoop() {
+    const t = performance.now();
+    if (lastHeartbeatTime) {
+      const delta = t - lastHeartbeatTime;
+      if (delta > 50 && t - lastHeartbeatLogTime > 250) {
+        appendLog(`heartbeat drop: ${delta.toFixed(1)}ms（setIntervalも同程度遅延＝メインスレッド全体がブロックされている可能性が高い）`);
+        lastHeartbeatLogTime = t;
+      }
+    }
+    lastHeartbeatTime = t;
+  }
+
   function attachAudioContextWatcher() {
     if (acStateHandlerAttached) return;
     try {
@@ -238,8 +263,10 @@
     appendLog('--- monitor opened ---');
     lastFrameTime = 0;
     frameCount = 0; fpsAccumTime = 0; maxFrameMs = 0;
+    lastHeartbeatTime = 0;
     baselineCounters = null;
     rafId = requestAnimationFrame(rafLoop);
+    heartbeatId = setInterval(heartbeatLoop, 20);
     intervalId = setInterval(updateStatsPanel, 500);
     updateStatsPanel();
   }
@@ -248,7 +275,8 @@
     if (overlay) overlay.style.display = 'none';
     if (rafId) cancelAnimationFrame(rafId);
     if (intervalId) clearInterval(intervalId);
-    rafId = null; intervalId = null;
+    if (heartbeatId) clearInterval(heartbeatId);
+    rafId = null; intervalId = null; heartbeatId = null;
   }
 
   function setupPerfMonitor() {
