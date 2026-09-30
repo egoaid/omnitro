@@ -35,6 +35,13 @@
   let maxFrameMs = 0;
   let lastJankLogTime = 0;
 
+  // v1.5.34: ログ出力の間引き（250ms）とは別に、実際の発生回数・合計時間を
+  // 常にカウントする（ログの間引きが原因で「heartbeat dropの方が少なく見える」
+  // という見かけ上の誤解が起きていたため。frame drop/heartbeat dropの真の
+  // 頻度を公平に比較するにはこの集計が必須）。
+  let frameDropCount = 0, frameDropTotalMs = 0;
+  let heartbeatDropCount = 0, heartbeatDropTotalMs = 0;
+
   // v1.5.33: rAFとは独立した「心拍」タイマー。rAFはvsync/描画パイプラインに
   // 紐づくため、rAFの遅延だけでは「描画固有の問題」か「メインスレッド全体の
   // ブロック（GC等）」かを区別できない。setIntervalは描画から独立して
@@ -171,6 +178,7 @@
     return [
       `BUILD: ${window._omniBuild || '?'}   MODE: ${low ? 'LOW POWER' : 'HIGH QUALITY'}   STRUM PATH: ${low ? 'voice-pool (pool voices=' + (p.poolVoices||0) + ')' : 'per-note nodes'}`,
       `RHYTHM: ${(typeof state !== 'undefined' && state.isPlaying) ? 'ON' : 'OFF'}   ` + Object.entries(window._omniProf || {}).map(([k, v]) => `${k}: n=${v.n} avg=${(v.sum / v.n).toFixed(2)}ms max=${v.max.toFixed(1)}ms`).join('   '),
+      `BLOCK TOTALS(>50ms): frame drop n=${frameDropCount} sum=${frameDropTotalMs.toFixed(0)}ms   heartbeat drop n=${heartbeatDropCount} sum=${heartbeatDropTotalMs.toFixed(0)}ms  （両者が近ければメインスレッド全体のブロック＝GC等の可能性大）`,
       `FPS: ${fps}   MAX FRAME: ${maxFrameMs.toFixed(1)}ms`,
       `AudioContext: ${ctxInfo.state}   sampleRate=${ctxInfo.sampleRate}   baseLatency=${(ctxInfo.baseLatency*1000).toFixed(1)}ms`,
       `Voices: current=${p.currentVoices||0}   max this session=${p.maxConcurrentVoices||0}   stolen(total)=${p.voicesStolen||0}`,
@@ -214,9 +222,12 @@
       frameCount++;
       fpsAccumTime += delta;
       if (delta > maxFrameMs) maxFrameMs = delta;
-      if (delta > 50 && ts - lastJankLogTime > 250) {
-        appendLog(`frame drop: ${delta.toFixed(1)}ms (UIスレッドが${delta.toFixed(0)}ms間ブロックされた)`);
-        lastJankLogTime = ts;
+      if (delta > 50) {
+        frameDropCount++; frameDropTotalMs += delta;
+        if (ts - lastJankLogTime > 250) {
+          appendLog(`frame drop: ${delta.toFixed(1)}ms (UIスレッドが${delta.toFixed(0)}ms間ブロックされた)`);
+          lastJankLogTime = ts;
+        }
       }
       if (fpsAccumTime >= 1000) {
         fps = Math.round((frameCount * 1000) / fpsAccumTime);
@@ -237,9 +248,12 @@
     const t = performance.now();
     if (lastHeartbeatTime) {
       const delta = t - lastHeartbeatTime;
-      if (delta > 50 && t - lastHeartbeatLogTime > 250) {
-        appendLog(`heartbeat drop: ${delta.toFixed(1)}ms（setIntervalも同程度遅延＝メインスレッド全体がブロックされている可能性が高い）`);
-        lastHeartbeatLogTime = t;
+      if (delta > 50) {
+        heartbeatDropCount++; heartbeatDropTotalMs += delta;
+        if (t - lastHeartbeatLogTime > 250) {
+          appendLog(`heartbeat drop: ${delta.toFixed(1)}ms（setIntervalも同程度遅延＝メインスレッド全体がブロックされている可能性が高い）`);
+          lastHeartbeatLogTime = t;
+        }
       }
     }
     lastHeartbeatTime = t;
@@ -264,6 +278,8 @@
     lastFrameTime = 0;
     frameCount = 0; fpsAccumTime = 0; maxFrameMs = 0;
     lastHeartbeatTime = 0;
+    frameDropCount = 0; frameDropTotalMs = 0;
+    heartbeatDropCount = 0; heartbeatDropTotalMs = 0;
     baselineCounters = null;
     rafId = requestAnimationFrame(rafLoop);
     heartbeatId = setInterval(heartbeatLoop, 20);

@@ -2,8 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-window._omniBuild = 'v1.5.33';
-console.log('%c[omnitro] build: v1.5.33 — 計測できたコストは全体のごく一部と判明。GC/メインスレッド全体のブロックを疑い、独立した心拍タイマーを追加＋不要なオブジェクト割り当てを削減', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.34';
+console.log('%c[omnitro] build: v1.5.34 — 診断: frame drop/heartbeat dropのログ間引きとは別に真の発生回数・合計時間を集計して表示（BLOCK TOTALS行）', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();
