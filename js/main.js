@@ -2,8 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-window._omniBuild = 'v1.5.35';
-console.log('%c[omnitro] build: v1.5.35 — ストラム用インジケーターの位置更新をtop/leftからtransformへ変更（レイアウト/ペイントを伴わないコンポジタ専用更新に）', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.36';
+console.log('%c[omnitro] build: v1.5.36 — コードボタングリッドのtouchmoveでdocument.elementFromPoint()を呼んでいたのを撤去（座標計算に置換）。コードを変えながらストラムする操作でのノイズに対応', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

@@ -406,12 +406,24 @@ function buildSimpleChordGrid() {
   // 各タッチIDがどのボタンを押しているか管理
   const touchMap = new Map(); // pointerId → keyId
 
+  // v1.5.36: document.elementFromPoint()をtouchmoveのたびに呼んでいたのを撤去。
+  // これはブラウザに描画ツリー全体への当たり判定（レイアウト依存のヒット
+  // テスト）を強制する重い処理で、コードボタン上を指でスライドしながら
+  // ストラムプレートも同時になぞる操作（＝2本指が同時に高頻度イベントを
+  // 発生させる場面）で特に顕著なフレーム落ち・ノイズの原因だった
+  // （実機での再現報告と一致）。#simple-chord-gridは3列×12行の単純な
+  // 格子状レイアウト（CSS Grid）なので、DOMへの問い合わせなしで座標から
+  // 行・列を直接計算できる。
+  let _gridRect = null;
+  function updateGridRect() { _gridRect = grid.getBoundingClientRect(); }
+
   function getKeyIdFromPoint(clientX, clientY) {
-    const el = document.elementFromPoint(clientX, clientY);
-    if (!el) return null;
-    const btn = el.closest('.simple-key');
-    if (!btn) return null;
-    return `${btn.dataset.row}-${btn.dataset.col}`;
+    if (!_gridRect) updateGridRect();
+    const r = _gridRect;
+    if (clientX < r.left || clientX >= r.right || clientY < r.top || clientY >= r.bottom) return null;
+    const col = Math.min(2,  Math.max(0, Math.floor((clientX - r.left) / r.width  * 3)));
+    const row = Math.min(11, Math.max(0, Math.floor((clientY - r.top)  / r.height * 12)));
+    return `${row}-${col}`;
   }
 
   function addTouchKey(pointerId, keyId) {
@@ -426,14 +438,17 @@ function buildSimpleChordGrid() {
     const kid = touchMap.get(pointerId);
     if (!kid) return;
     touchMap.delete(pointerId);
-    if (![...touchMap.values()].includes(kid)) {
-      pressedKeys.delete(kid);
-    }
+    // v1.5.36: Map.values()からの配列生成（タッチのたび新規アロケーション）を
+    // 廃止し、素直なループでの存在チェックに変更（出力は同一）。
+    let stillHeld = false;
+    for (const v of touchMap.values()) { if (v === kid) { stillHeld = true; break; } }
+    if (!stillHeld) pressedKeys.delete(kid);
     evaluateSimpleChord();
   }
 
   grid.addEventListener('touchstart', e => {
     e.preventDefault();
+    updateGridRect();
     for (const t of e.changedTouches) {
       const kid = getKeyIdFromPoint(t.clientX, t.clientY);
       if (kid) addTouchKey(t.identifier, kid);
