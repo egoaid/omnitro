@@ -440,6 +440,7 @@
     opacity: 0;
     transition: opacity 0.05s, background 0.15s;
     box-shadow: 0 0 8px rgba(79,195,247,0.8), 0 0 16px rgba(79,195,247,0.4);
+    will-change: transform; /* v1.5.35: transformでの位置更新をコンポジタ専用にするための事前昇格 */
   }
   /* Touch indicator - vertical */
   .strum-touch-indicator.vertical {

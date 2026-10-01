@@ -35,12 +35,20 @@ function setupStrumplate() {
   }
 
   function showIndicator(pos, mode) {
+    // v1.5.35: top/leftでの位置更新はレイアウト+ペイント+コンポジットを
+    // 毎回強制する。box-shadow/gradientを持つこの要素では特にペイントコスト
+    // が高く、rAF（描画パイプライン）に直結する「frame drop」の主因だった
+    // （実機ログでheartbeat drop（純粋なJSタイマー、描画と無関係）がほぼ
+    // 正常だったのに対しframe dropだけ桁違いに多かったことから判明）。
+    // GPUコンポジタのみで完結するtransformに置き換える（見た目は同一）。
     if (sp.classList.contains('vertical')) {
-      indicator.style.top = pos + 'px';
+      indicator.style.top = '0px';
       indicator.style.left = '';
+      indicator.style.transform = `translateY(${pos}px)`;
     } else {
-      indicator.style.left = pos + 'px';
+      indicator.style.left = '0px';
       indicator.style.top = '';
+      indicator.style.transform = `translateX(${pos}px)`;
     }
     indicator.classList.add('visible');
     indicator.classList.toggle('hold-mode', mode === 'hold');
@@ -134,18 +142,16 @@ function setupStrumplate() {
       el.style.background = `linear-gradient(180deg, transparent, rgba(${c.rgb},0.8), rgba(255,255,255,0.9), rgba(${c.rgb},0.8), transparent)`;
     }
     el.style.boxShadow = `0 0 8px rgba(${c.rgb},0.8), 0 0 16px rgba(${c.rgb},0.4)`;
+    // v1.5.35: 位置はtransformで動かすため、top/leftは固定の基準点(0)にしておく
+    if (isVertical) el.style.top = '0px'; else el.style.left = '0px';
     sp.appendChild(el);
     return el;
   }
 
-  // インジケーター位置を更新して表示
+  // インジケーター位置を更新して表示（transformのみ変更＝コンポジタのみで完結）
   function moveIndicatorEl(el, pos) {
     const isVertical = sp.classList.contains('vertical');
-    if (isVertical) {
-      el.style.top = pos + 'px';
-    } else {
-      el.style.left = pos + 'px';
-    }
+    el.style.transform = isVertical ? `translateY(${pos}px)` : `translateX(${pos}px)`;
     el.classList.add('visible');
   }
 
