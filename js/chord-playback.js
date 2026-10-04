@@ -25,11 +25,14 @@ function getSubNotes(transposed) {
 
 async function playChord(root, type) {
   await ensureAudio();
+  const _pc0 = window._frecOn ? performance.now() : 0; // 計測のみ（挙動は不変）
+  let _rebuilt = 0;
 
   // パニック後フラグが立っている場合: chordSynthを再構築してからアタック。
   // これにより旧ボイスのリリーステールが完全に消えた後に
   // クリーンな状態で新しい発音が始まる（濁り防止）。
   if (chordNeedsRebuild) {
+    _rebuilt = 1;
     updateVoice(state.voice);
     chordNeedsRebuild = false;
   }
@@ -43,12 +46,21 @@ async function playChord(root, type) {
 
   // triggerAttack: 明示的にreleaseするまで鳴り続ける
   chordSynth.triggerAttack(transposed, Tone.now());
+  if (_pc0) {
+    const dt = performance.now() - _pc0;
+    omniProfEnd('playChord', _pc0);
+    let av = 0; try { av = chordSynth.activeVoices | 0; } catch (e) {}
+    frec(FREC.PLAY, transposed.length, dt, _rebuilt, av);
+  }
 }
 
 function releaseChord() {
   if (activeChordNotes.length > 0) {
+    const _rl0 = window._frecOn ? performance.now() : 0;
+    const _n = activeChordNotes.length;
     try { chordSynth.triggerRelease(activeChordNotes, Tone.now()); } catch(e){}
     activeChordNotes = [];
+    if (_rl0) { omniProfEnd('releaseChord', _rl0); frec(FREC.REL, _n, performance.now() - _rl0); }
   }
   activeSubNotes = [];
 }

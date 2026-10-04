@@ -92,8 +92,9 @@ const POOL_SWEEP_MS = 500;       // 鳴り終えたボイスを切り離す共�
 window._omniProf = window._omniProf || {};
 function omniProfEnd(name, t0) {
   const d = performance.now() - t0;
-  const s = window._omniProf[name] || (window._omniProf[name] = { n: 0, sum: 0, max: 0 });
+  const s = window._omniProf[name] || (window._omniProf[name] = { n: 0, sum: 0, max: 0, bmax: 0 });
   s.n++; s.sum += d; if (d > s.max) s.max = d;
+  if (d > s.bmax) s.bmax = d; // 1秒バケットごとの最大値（フライトレコーダー用）
 }
 
 window._omniPerf = window._omniPerf || {
@@ -418,6 +419,7 @@ class NativeStrumSynth {
     perf.currentVoices = busy;
     if (busy > perf.maxConcurrentVoices) perf.maxConcurrentVoices = busy;
     omniProfEnd('strum-trigger', _pt0);
+    if (window._frecOn) frec(FREC.STRUM, window._omniLastIdx | 0, velocity * 100, stolen ? 1 : 0, performance.now() - _pt0, 0, noteStr);
   }
 
   // 鳴り終えたボイスの出力を切り離す共有タイマー（プール全体で1本のみ。
@@ -497,6 +499,7 @@ class NativeStrumSynth {
     // 一切走らなくなる（間引きコストそのものをゼロにする）。
     if (lowPower) {
       if (this._lastTriggerTime != null && (now - this._lastTriggerTime) < MIN_TRIGGER_INTERVAL_LOW) {
+        if (window._frecOn) frec(FREC.GATE);
         return;
       }
       this._lastTriggerTime = now;
@@ -507,6 +510,7 @@ class NativeStrumSynth {
       this._triggerPooled(noteStr, velocity);
       return;
     }
+    if (window._frecOn) frec(FREC.STRUM, window._omniLastIdx | 0, velocity * 100, 0, 0, 0, noteStr);
 
     // ── 同時発音数の安全上限チェック（通常演奏では発火しない） ──────────────
     if (this._activeVoices.length >= getMaxActiveVoices()) {

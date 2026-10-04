@@ -157,15 +157,18 @@ let activeSession  = false;
 
 // .pressedの再描画: keysSetのボタンだけ点灯
 function redrawPressed(keysSet) {
+  const _rt0 = window._frecOn ? performance.now() : 0; // 計測のみ（挙動は不変）
   document.querySelectorAll('.simple-key.pressed').forEach(b => b.classList.remove('pressed', 'mouse-held'));
   for (const key of keysSet) {
     const [r, c] = key.split('-');
     const btn = document.querySelector(`[data-row="${r}"][data-col="${c}"].simple-key`);
     if (btn) btn.classList.add('pressed');
   }
+  if (_rt0) omniProfEnd('redrawPressed', _rt0);
 }
 
 // コード確定: state更新・発音・表示
+let _evalPath = 0, _evalPlayed = 0; // 計測用（evaluateSimpleChordの経路/コード発音有無）
 function commitChord(toneRoot, omniRoot, type, keysSnap) {
   lastChordKeys = new Set(keysSnap);
   activeSession  = true;
@@ -173,14 +176,29 @@ function commitChord(toneRoot, omniRoot, type, keysSnap) {
   state.selectedType    = type;
   state.selectedOmniRoot = omniRoot;
   updateChordDisplay();
-  if (state.chordAuto) playChord(toneRoot, type);
+  if (state.chordAuto) { _evalPlayed = 1; playChord(toneRoot, type); }
 }
 
+// 計測ラッパー: 判定ロジック本体（_evaluateSimpleChordImpl）は一切変更していない。
+// 記録が有効な時だけ、所要時間・経路・結果のコードをフライトレコーダーに残す。
 function evaluateSimpleChord() {
+  if (!window._frecOn) { _evaluateSimpleChordImpl(); return; }
+  _evalPlayed = 0;
+  const _e0 = performance.now();
+  _evaluateSimpleChordImpl();
+  const dt = performance.now() - _e0;
+  omniProfEnd('eval', _e0);
+  const ct = CHORD_TYPES[state.selectedType];
+  frec(FREC.EVAL, _evalPath, pressedKeys.size, lastChordKeys.size, _evalPlayed, dt,
+       state.selectedOmniRoot, ct ? ct.label : null);
+}
+
+function _evaluateSimpleChordImpl() {
 
   // ── 全指が離れた ──────────────────────────────────────────────────────────
   if (pressedKeys.size === 0) {
     activeSession = false;
+    _evalPath = (state.chordHold && lastChordKeys.size > 0) ? 0 : 1;
     clearSimpleBadges();
     mouseHeldKeys.clear();
     if (state.chordHold && lastChordKeys.size > 0) {
@@ -204,6 +222,7 @@ function evaluateSimpleChord() {
   // 条件: セッション継続中 かつ lastChordKeysが複数 かつ pressedKeysがその部分集合
   if (activeSession && lastChordKeys.size > 1 && pressedKeys.size < lastChordKeys.size) {
     if ([...pressedKeys].every(k => lastChordKeys.has(k))) {
+      _evalPath = 2;
       redrawPressed(pressedKeys);
       return; // コード変更なし
     }
@@ -219,6 +238,7 @@ function evaluateSimpleChord() {
     const omniIdx  = OMNI_ROOTS.indexOf(special.root);
     if (!state.chordAuto) releaseChord();
     // specialコードは pressedKeys の2キーがそのまま確定キー
+    _evalPath = 3;
     commitChord(toneRoot, special.root, special.type, pressedKeys);
     showSimpleBadge(special.type, omniIdx);
     return;
@@ -245,6 +265,7 @@ function evaluateSimpleChord() {
       if (hasMin) chordKeys.add(`${ri}-1`);
       if (has7th) chordKeys.add(`${ri}-2`);
       if (!state.chordAuto) releaseChord();
+      _evalPath = 4;
       commitChord(toneRoot, omniRoot, type, chordKeys);
       showSimpleBadge(type, ri);
       return;
@@ -252,6 +273,7 @@ function evaluateSimpleChord() {
   }
 
   // コード未確定（無効な組み合わせ）: セッションをリセット
+  _evalPath = 5;
   activeSession = false;
   lastChordKeys.clear();
 }
@@ -261,6 +283,7 @@ function clearSimpleBadges() {
 }
 
 function showSimpleBadge(type, rootIdx) {
+  const _bt0 = window._frecOn ? performance.now() : 0;
   clearSimpleBadges();
   const label = CHORD_TYPES[type].label;
   // Find a pressed button in that row to attach the badge
@@ -271,6 +294,7 @@ function showSimpleBadge(type, rootIdx) {
     badge.textContent = label;
     btn.appendChild(badge);
   });
+  if (_bt0) omniProfEnd('badge', _bt0);
 }
 
 // ─── BUILD SIMPLE CHORD GRID ─────────────────────────────────────────────────
@@ -406,24 +430,14 @@ function buildSimpleChordGrid() {
   // 各タッチIDがどのボタンを押しているか管理
   const touchMap = new Map(); // pointerId → keyId
 
-  // v1.5.36: document.elementFromPoint()をtouchmoveのたびに呼んでいたのを撤去。
-  // これはブラウザに描画ツリー全体への当たり判定（レイアウト依存のヒット
-  // テスト）を強制する重い処理で、コードボタン上を指でスライドしながら
-  // ストラムプレートも同時になぞる操作（＝2本指が同時に高頻度イベントを
-  // 発生させる場面）で特に顕著なフレーム落ち・ノイズの原因だった
-  // （実機での再現報告と一致）。#simple-chord-gridは3列×12行の単純な
-  // 格子状レイアウト（CSS Grid）なので、DOMへの問い合わせなしで座標から
-  // 行・列を直接計算できる。
-  let _gridRect = null;
-  function updateGridRect() { _gridRect = grid.getBoundingClientRect(); }
-
   function getKeyIdFromPoint(clientX, clientY) {
-    if (!_gridRect) updateGridRect();
-    const r = _gridRect;
-    if (clientX < r.left || clientX >= r.right || clientY < r.top || clientY >= r.bottom) return null;
-    const col = Math.min(2,  Math.max(0, Math.floor((clientX - r.left) / r.width  * 3)));
-    const row = Math.min(11, Math.max(0, Math.floor((clientY - r.top)  / r.height * 12)));
-    return `${row}-${col}`;
+    const _ep0 = window._frecOn ? performance.now() : 0; // 計測のみ（判定は不変）
+    const el = document.elementFromPoint(clientX, clientY);
+    if (_ep0) omniProfEnd('elemFromPoint', _ep0);
+    if (!el) return null;
+    const btn = el.closest('.simple-key');
+    if (!btn) return null;
+    return `${btn.dataset.row}-${btn.dataset.col}`;
   }
 
   function addTouchKey(pointerId, keyId) {
@@ -431,6 +445,7 @@ function buildSimpleChordGrid() {
     removeTouchKey(pointerId);
     touchMap.set(pointerId, keyId);
     pressedKeys.add(keyId);
+    if (window._frecOn) frec(FREC.CT_ADD, pointerId, parseInt(keyId), keyId.charCodeAt(keyId.length - 1) - 48, pressedKeys.size);
     evaluateSimpleChord();
   }
 
@@ -438,17 +453,16 @@ function buildSimpleChordGrid() {
     const kid = touchMap.get(pointerId);
     if (!kid) return;
     touchMap.delete(pointerId);
-    // v1.5.36: Map.values()からの配列生成（タッチのたび新規アロケーション）を
-    // 廃止し、素直なループでの存在チェックに変更（出力は同一）。
-    let stillHeld = false;
-    for (const v of touchMap.values()) { if (v === kid) { stillHeld = true; break; } }
-    if (!stillHeld) pressedKeys.delete(kid);
+    if (![...touchMap.values()].includes(kid)) {
+      pressedKeys.delete(kid);
+    }
+    if (window._frecOn) frec(FREC.CT_REM, pointerId, parseInt(kid), kid.charCodeAt(kid.length - 1) - 48, pressedKeys.size);
     evaluateSimpleChord();
   }
 
   grid.addEventListener('touchstart', e => {
     e.preventDefault();
-    updateGridRect();
+    if (window._frecOn) { const _lg = performance.now() - e.timeStamp; if (_lg >= 0 && _lg < 5000) frecLag(_lg, 1); }
     for (const t of e.changedTouches) {
       const kid = getKeyIdFromPoint(t.clientX, t.clientY);
       if (kid) addTouchKey(t.identifier, kid);
@@ -457,11 +471,17 @@ function buildSimpleChordGrid() {
 
   grid.addEventListener('touchmove', e => {
     e.preventDefault();
+    const _cm0 = window._frecOn ? performance.now() : 0;
+    if (_cm0) { const _lg = _cm0 - e.timeStamp; if (_lg >= 0 && _lg < 5000) frecLag(_lg, 1); }
     for (const t of e.changedTouches) {
       const kid = getKeyIdFromPoint(t.clientX, t.clientY);
       if (kid) addTouchKey(t.identifier, kid);
-      else removeTouchKey(t.identifier);
+      else {
+        if (window._frecOn && touchMap.has(t.identifier)) frec(FREC.CT_GAP, t.identifier);
+        removeTouchKey(t.identifier);
+      }
     }
+    if (_cm0) omniProfEnd('chordMove', _cm0);
   }, { passive: false });
 
   grid.addEventListener('touchend', e => {

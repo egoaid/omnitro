@@ -199,6 +199,7 @@ function setupStrumplate() {
   sp.addEventListener('touchstart', e => {
     e.preventDefault();
     const _ts0 = performance.now(); // v1.5.32: touchstart全体の実測（従来未計測だった盲点）
+    if (window._frecOn) { const _lg = _ts0 - e.timeStamp; if (_lg >= 0 && _lg < 5000) frecLag(_lg, 0); }
     updateRect();
     for (let _ti = 0; _ti < e.changedTouches.length; _ti++) {
       const t = e.changedTouches[_ti];
@@ -244,6 +245,7 @@ function setupStrumplate() {
     e.preventDefault();
     const ts = performance.now();
     const _tm0 = ts;
+    if (window._frecOn) { const _lg = ts - e.timeStamp; if (_lg >= 0 && _lg < 5000) frecLag(_lg, 0); }
     for (let _ti = 0; _ti < e.changedTouches.length; _ti++) {
       const t = e.changedTouches[_ti];
       if (!strumFingers.has(t.identifier)) continue;

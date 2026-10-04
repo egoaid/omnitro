@@ -113,6 +113,7 @@
     header.innerHTML = `
       <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--accent1,#e8c95a);letter-spacing:2px;flex:1;">PERFORMANCE MONITOR</div>
       <button id="perf-snapshot-btn" style="font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 8px;border:1px solid #4fc3f7;background:#0e1c2c;color:#4fc3f7;">SNAPSHOT</button>
+      <button id="perf-report-btn" style="font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 8px;border:1px solid #e8c95a;background:#1a1400;color:#e8c95a;">REPORT</button>
       <button id="perf-copy-btn" style="font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 8px;border:1px solid #27ae60;background:#0e1c2c;color:#27ae60;">COPY</button>
       <button id="perf-clear-btn" style="font-size:9px;letter-spacing:1px;border-radius:4px;cursor:pointer;padding:5px 8px;border:1px solid #c0392b;background:#0e1c2c;color:#c0392b;">CLEAR</button>
       <button id="perf-close-btn" style="width:26px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #2a4a6a;background:#1a2a3a;color:#8899aa;">✕</button>
@@ -148,11 +149,18 @@
       if (logEl) logEl.value = '';
     });
     header.querySelector('#perf-snapshot-btn').addEventListener('click', () => appendLog('SNAPSHOT\n' + buildStatsText()));
-    header.querySelector('#perf-copy-btn').addEventListener('click', copyLogToClipboard);
+    header.querySelector('#perf-copy-btn').addEventListener('click', () => copyLogToClipboard());
+    // v1.5.37: フライトレコーダーの完全レポートを表示してクリップボードへコピー
+    header.querySelector('#perf-report-btn').addEventListener('click', () => {
+      const rep = window.frecReport ? window.frecReport() : '(flight recorder未読み込み)';
+      if (logEl) { logEl.value = rep; logEl.scrollTop = 0; }
+      copyLogToClipboard(rep);
+    });
   }
 
-  function copyLogToClipboard() {
-    const text = (statsEl ? statsEl.textContent + '\n\n' : '') + logLines.join('\n');
+  function copyLogToClipboard(override) {
+    const text = (typeof override === 'string') ? override
+      : (statsEl ? statsEl.textContent + '\n\n' : '') + logLines.join('\n');
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
     } else {
@@ -224,7 +232,8 @@
       if (delta > maxFrameMs) maxFrameMs = delta;
       if (delta > 50) {
         frameDropCount++; frameDropTotalMs += delta;
-        if (ts - lastJankLogTime > 250) {
+        if (window.frecFrameDrop) frecFrameDrop(delta);
+        if (ts - lastJankLogTime > 250 && overlay && overlay.style.display !== 'none') {
           appendLog(`frame drop: ${delta.toFixed(1)}ms (UIスレッドが${delta.toFixed(0)}ms間ブロックされた)`);
           lastJankLogTime = ts;
         }
@@ -275,24 +284,31 @@
     overlay.style.display = 'flex';
     attachAudioContextWatcher();
     appendLog('--- monitor opened ---');
-    lastFrameTime = 0;
-    frameCount = 0; fpsAccumTime = 0; maxFrameMs = 0;
+    // v1.5.37: フライトレコーダー開始（モニターを閉じても記録は続く）
+    const firstStart = !window._frecOn;
+    if (window.frecStart) frecStart();
+    if (firstStart || !rafId) {
+      lastFrameTime = 0;
+      frameCount = 0; fpsAccumTime = 0; maxFrameMs = 0;
+      frameDropCount = 0; frameDropTotalMs = 0;
+      heartbeatDropCount = 0; heartbeatDropTotalMs = 0;
+      baselineCounters = null;
+    }
     lastHeartbeatTime = 0;
-    frameDropCount = 0; frameDropTotalMs = 0;
-    heartbeatDropCount = 0; heartbeatDropTotalMs = 0;
-    baselineCounters = null;
-    rafId = requestAnimationFrame(rafLoop);
-    heartbeatId = setInterval(heartbeatLoop, 20);
-    intervalId = setInterval(updateStatsPanel, 500);
+    if (!rafId) rafId = requestAnimationFrame(rafLoop);
+    if (!heartbeatId) heartbeatId = setInterval(heartbeatLoop, 20);
+    if (!intervalId) intervalId = setInterval(updateStatsPanel, 500);
     updateStatsPanel();
+    if (firstStart) appendLog('● 記録開始。✕で閉じて演奏→ノイズが聞こえたら画面上部の「MARK」→終わったらモニターを開いて REPORT→（自動コピー）');
   }
 
   function closePerfMonitor() {
     if (overlay) overlay.style.display = 'none';
-    if (rafId) cancelAnimationFrame(rafId);
+    // 記録中はフレーム計測(rAF)を止めない（閉じたまま演奏して後からREPORTを取るため）
+    if (rafId && !window._frecOn) { cancelAnimationFrame(rafId); rafId = null; }
     if (intervalId) clearInterval(intervalId);
     if (heartbeatId) clearInterval(heartbeatId);
-    rafId = null; intervalId = null; heartbeatId = null;
+    intervalId = null; heartbeatId = null;
   }
 
   function setupPerfMonitor() {

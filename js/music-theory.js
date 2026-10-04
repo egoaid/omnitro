@@ -102,6 +102,8 @@ function getArpeggioNotes(root, type, position) {
   if (!allNotes || allNotes.length === 0) return null;
 
   const idx = Math.floor(position * allNotes.length);
-  return allNotes[Math.min(idx, allNotes.length - 1)];
+  const k = Math.min(idx, allNotes.length - 1);
+  window._omniLastIdx = k; // 計測用: 直近に選ばれたストラム区間番号(0〜12)
+  return allNotes[k];
 }
 
