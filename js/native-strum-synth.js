@@ -167,6 +167,17 @@ function tuneRatio() {
   return Math.pow(2, (state.tuneCents || 0) / 1200);
 }
 
+// 計測用: ボイスに設定済みのエンベロープから、時刻nowの理論上のゲイン値を求める（純粋関数）
+function _expectedGain(v, now) {
+  if (!v.pk || now < v.t0) return 0.0001;
+  const a = now - v.t0;
+  if (a < v.at) return 0.0001 * Math.pow(v.pk / 0.0001, a / v.at);
+  if (a < v.at + v.dc) return v.pk + (v.sl - v.pk) * ((a - v.at) / v.dc);
+  if (now < v.rs) return v.sl;
+  if (now < v.rs + v.rd) return v.sl * Math.pow(0.0001 / v.sl, (now - v.rs) / v.rd);
+  return 0.0001;
+}
+
 class NativeStrumSynth {
   constructor(dest, voiceDef) {
     this.ctx = Tone.getContext().rawContext;
@@ -339,7 +350,9 @@ class NativeStrumSynth {
     osc1.start(); osc2.start();
     window._omniPerf.nodesCreated += nodes.length;
     window._omniPerf.poolVoices = (window._omniPerf.poolVoices || 0) + 1;
-    return { osc1, osc2, envGain, lfoDepth, out, nodes, connected: false, endTime: 0, gen: 0 };
+    // t0〜rd: 直近のエンベロープ設定（計測用。奪取時の理論上のゲイン値を算出するために保持）
+    return { osc1, osc2, envGain, lfoDepth, out, nodes, connected: false, endTime: 0, gen: 0,
+             t0: 0, pk: 0, at: 0, dc: 0, sl: 0, rs: 0, rd: 0 };
   }
 
   // v1.5.33: 毎ノートで {v, stolen} のラッパーオブジェクトを新規生成していたのを
@@ -374,6 +387,12 @@ class NativeStrumSynth {
       // 使用中ボイスの再利用: 短いフェードで無音にしてからピッチを変える（クリック防止）
       let cur = 0.0001;
       try { cur = Math.max(0.0001, g.value); } catch(e){}
+      if (window._frecOn) {
+        // 計測のみ: 読み取ったgain値(g.value)と、設定済みエンベロープから計算した理論値を比較する。
+        // 一致しなければSafariのAudioParam.valueが古い値を返している（フェード開始値がズレる）。
+        let rawv = -1; try { rawv = g.value; } catch(e){}
+        frec(FREC.STEALDIAG, rawv, _expectedGain(v, now), (now - v.t0) * 1000, v.pk, 0);
+      }
       g.cancelScheduledValues(now);
       g.setValueAtTime(cur, now);
       g.linearRampToValueAtTime(0.0001, now + POOL_FADE);
@@ -405,6 +424,7 @@ class NativeStrumSynth {
     g.exponentialRampToValueAtTime(0.0001, releaseStart + this.release);
 
     v.endTime = releaseStart + this.release + 0.02;
+    v.t0 = t; v.pk = safePeak; v.at = safeAttack; v.dc = this.decay; v.sl = sustLevel; v.rs = releaseStart; v.rd = this.release;
     v.gen++;
     if (!v.connected) {
       v.out.connect(this.nativeDest);

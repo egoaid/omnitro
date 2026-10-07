@@ -45,12 +45,15 @@ async function playChord(root, type) {
   activeChordNotes = transposed;
 
   // triggerAttack: 明示的にreleaseするまで鳴り続ける
+  const _ta0 = _pc0 ? performance.now() : 0;
   chordSynth.triggerAttack(transposed, Tone.now());
   if (_pc0) {
-    const dt = performance.now() - _pc0;
+    const now2 = performance.now();
+    const dt = now2 - _pc0;
     omniProfEnd('playChord', _pc0);
+    omniProfEnd('triggerAttack', _ta0);
     let av = 0; try { av = chordSynth.activeVoices | 0; } catch (e) {}
-    frec(FREC.PLAY, transposed.length, dt, _rebuilt, av);
+    frec(FREC.PLAY, transposed.length, dt, _rebuilt, av, now2 - _ta0);
   }
 }
 

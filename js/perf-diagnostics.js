@@ -225,6 +225,7 @@
   }
 
   function rafLoop(ts) {
+    window._lastRafT = performance.now(); // 計測用: 入力遅れ発生時にrAFが回っていたかを判別する
     if (lastFrameTime) {
       const delta = ts - lastFrameTime;
       frameCount++;

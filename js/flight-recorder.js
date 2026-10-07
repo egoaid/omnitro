@@ -29,7 +29,7 @@
 
   // イベントコード
   const EV = { CT_ADD: 1, CT_REM: 2, CT_GAP: 3, EVAL: 4, PLAY: 5, REL: 6, STRUM: 7,
-               GATE: 8, FDROP: 9, HBDROP: 10, ASTEP: 11, MARK: 12, STATE: 15, LAG: 17 };
+               GATE: 8, FDROP: 9, HBDROP: 10, ASTEP: 11, MARK: 12, STATE: 15, LAG: 17, STEALDIAG: 18, MARKER: 100 };
   window.FREC = EV;
 
   const cnt = new Float64Array(32);       // イベントコード別の総数
@@ -71,7 +71,7 @@
   window.frecLag = function (ms, src) {
     if (!window._frecOn) return;
     if (ms > ctr.lag) ctr.lag = ms;
-    if (ms > 40) window.frec(EV.LAG, ms, src);
+    if (ms > 40) window.frec(EV.LAG, ms, src, window._lastRafT ? performance.now() - window._lastRafT : -1);
   };
 
   function closeBucket(sec) {
@@ -102,7 +102,7 @@
     for (let k = 0; k < count; k++) {
       const i = (start + k) & MASK;
       if (T[i] < fromT || T[i] > toT) continue;
-      rows.push([T[i], CODE[i], A[i], B[i], C[i], D[i], E[i], S1[i], S2[i]]);
+      rows.push([T[i], CODE[i], A[i], B[i], C[i], D[i], E[i], S1[i], S2[i], i]);  // 末尾=リング通し位置（重複排除用）
     }
     return rows;
   }
@@ -125,7 +125,7 @@
     window.frec(EV.MARK, markCount);
     incidents.push({ kind: 'MARK #' + markCount + '（耳でノイズを確認）', t: now, rows: snapshot(now - 3000, now) });
     const marks = incidents.filter(x => x.kind.startsWith('MARK'));
-    while (marks.length > 5) { incidents.splice(incidents.indexOf(marks[0]), 1); marks.shift(); }
+    while (marks.length > 8) { incidents.splice(incidents.indexOf(marks[0]), 1); marks.shift(); }
     return markCount;
   };
 
@@ -158,10 +158,10 @@
           if (medHist.length >= 10) {
             const j = m - medHist[0], aj = Math.abs(j);
             offHist[aj < 5 ? 0 : aj < 10 ? 1 : aj < 20 ? 2 : aj < 30 ? 3 : aj < 50 ? 4 : 5]++;
-            if (aj > 30) {
+            if (aj > 20) {
               ctr.as++; if (aj > ctr.asMax) ctr.asMax = aj;
               window.frec(EV.ASTEP, j);
-              autoIncident('AUDIO-CLOCK ' + (j > 0 ? '+' : '') + j.toFixed(0) + 'ms', true);
+              autoIncident('AUDIO-CLOCK ' + (j > 0 ? '+' : '') + j.toFixed(0) + 'ms', aj > 30);
               medHist = [];
             } else { medHist.shift(); }
           }
@@ -244,16 +244,18 @@
       case EV.CT_REM:  return `${ts} 指${a} ボタン離れ ${rootName(b)}-${TYPE_COL[c]} (押下中=${d})`;
       case EV.CT_GAP:  return `${ts} 指${a} ボタン間の隙間/範囲外 → 離れ扱い`;
       case EV.EVAL:    return `${ts} EVAL ${PATHS[a] || a} → ${s1 ? s1 + ' ' + (s2 || '') : '(コード無し)'} 押下=${b} 保持=${c} ${d ? 'コード発音' : ''} ${f2(e)}ms`;
-      case EV.PLAY:    return `${ts} PLAYCHORD 音数=${a} ${f2(b)}ms${c ? ' ★voice再構築' : ''} Tone発音中voice=${d}`;
+      case EV.PLAY:    return `${ts} PLAYCHORD 音数=${a} ${f2(b)}ms(うちtriggerAttack ${f2(e)}ms)${c ? ' ★voice再構築' : ''} Tone発音中voice=${d}`;
       case EV.REL:     return `${ts} RELEASECHORD 音数=${a} ${f2(b)}ms`;
       case EV.STRUM:   return `${ts} STRUM ${s1 || ''} 区間${a}/13 vel=${b}${c ? ' STEAL' : ''} ${f2(d)}ms`;
       case EV.GATE:    return `${ts} STRUM-GATE 22ms未満の発音を間引き`;
       case EV.FDROP:   return `${ts} FRAME-DROP ${f1(a)}ms`;
       case EV.HBDROP:  return `${ts} HEARTBEAT-DROP ${f1(a)}ms`;
       case EV.ASTEP:   return `${ts} ★AUDIO-CLOCK-STEP ${a > 0 ? '+' : ''}${f1(a)}ms（オーディオ処理の遅れ/飛び）`;
+      case EV.STEALDIAG: return `${ts}   └奪取時の診断: g.value読取=${a.toFixed(4)} 理論値=${b.toFixed(4)} (ピーク比${d > 0 ? Math.round(b / d * 100) : '?'}%) 経過${f1(c)}ms ${Math.abs(a - b) > Math.max(0.002, b * 0.3) ? '★読取値が理論値とズレ' : ''}`;
+      case EV.MARKER:  return `${ts} ▶▶▶ ${s1}`;
       case EV.MARK:    return `${ts} ●MARK #${a}`;
       case EV.STATE:   return `${ts} 設定: ${s1}`;
-      case EV.LAG:     return `${ts} INPUT-LAG ${f1(a)}ms (${b ? 'コード' : 'ストラム'}の入力が処理されるまでの遅れ)`;
+      case EV.LAG:     return `${ts} INPUT-LAG ${f1(a)}ms (${b ? 'コード' : 'ストラム'}の入力が処理されるまでの遅れ／直近rAFから${c < 0 ? '?' : f1(c)}ms)`;
       default:         return `${ts} code${code}`;
     }
   }
@@ -277,7 +279,7 @@
     L.push(PATHS.map((n, i) => `${n}: ${pathCnt[i]}`).join('\n'));
     L.push(`ボタン押下=${cnt[EV.CT_ADD]} ボタン離れ=${cnt[EV.CT_REM]} 隙間/範囲外通過=${cnt[EV.CT_GAP]}  PLAYCHORD=${cnt[EV.PLAY]} RELEASECHORD=${cnt[EV.REL]}  STRUM発音=${cnt[EV.STRUM]} 間引き=${cnt[EV.GATE]}`);
     L.push('');
-    L.push(`--- オーディオクロック変化の分布（3点中央値の1回あたり変化量 ms）。30ms超が実際の飛びとして記録される ---`);
+    L.push(`--- オーディオクロック変化の分布（3点中央値の1回あたり変化量 ms）。20ms超が記録され、30ms超でインシデント化される ---`);
     L.push('※連続した飛びは複数件(+40,+40…)に分かれて記録されることがあります。合計が停止時間の目安です。');
     L.push(`<5:${offHist[0]}  <10:${offHist[1]}  <20:${offHist[2]}  <30:${offHist[3]}  <50:${offHist[4]}  >=50:${offHist[5]}`);
     L.push('');
@@ -288,11 +290,20 @@
       L.push(`${b.s} | ${b.notes} ${b.steals} | ${b.n['drum-hit']} | ${b.n['eval']} | ${f1(m['eval'])} ${f1(m['playChord'])} ${f1(m['elemFromPoint'])} ${f1(m['redrawPressed'])} ${f1(m['badge'])} ${f1(m['strum-trigger'])} ${f1(m['drum-hit'])} | ${c.fd}/${c.fdMax.toFixed(0)} ${c.hb}/${c.hbMax.toFixed(0)} ${c.as}/${c.asMax.toFixed(0)} ${c.lag.toFixed(0)} ${c.mk ? '●' : ''}`);
     }
     L.push('');
-    L.push(`--- インシデント ${incidents.length}件（MARK=耳でノイズを確認した直前3秒／AUTO=オーディオクロックの飛び・メインスレッド停止の前1秒後0.4秒）---`);
+    L.push(`--- 時系列（インシデント${incidents.length}件の前後を統合・重複排除。MARK=耳でノイズを確認した直前3秒／AUTO=音飛び・メインスレッド停止の前1秒後0.4秒）---`);
+    const map = new Map();
     for (const inc of incidents) {
-      L.push('');
-      L.push(`### ${inc.kind}  @${((inc.t - t0) / 1000).toFixed(2)}s  （イベント${inc.rows.length}件）`);
-      for (const r of inc.rows) L.push(decode(r));
+      for (const r of inc.rows) { const key = r[0] + '|' + r[9]; if (!map.has(key)) map.set(key, r); }  // 時刻+リング位置で一意（同時刻の別イベントを消さない）
+    }
+    const rows = Array.from(map.values());
+    for (const inc of incidents) if (inc.kind.startsWith('AUTO')) rows.push([inc.t, EV.MARKER, 0, 0, 0, 0, 0, inc.kind, null]);
+    rows.sort((x, y) => (x[0] - y[0]) || (x[1] - y[1]));
+    L.push(`（イベント${rows.length}件）`);
+    let prevT = null;
+    for (const r of rows) {
+      if (prevT !== null && r[0] - prevT > 1200) L.push(`   …（${((r[0] - prevT) / 1000).toFixed(1)}秒省略）…`);
+      L.push(decode(r));
+      prevT = r[0];
     }
     return L.join('\n');
   };
