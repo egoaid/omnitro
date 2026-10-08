@@ -32,6 +32,15 @@
                GATE: 8, FDROP: 9, HBDROP: 10, ASTEP: 11, MARK: 12, STATE: 15, LAG: 17, STEALDIAG: 18, MARKER: 100 };
   window.FREC = EV;
 
+  // 設定変更（リズム/AUTO/HOLD/MODE/GLOW）で区切った「区間別集計」用の累積値
+  const tot = { fd: 0, fdSum: 0, hb: 0, hbSum: 0, as: 0, asSum: 0, ev: 0, st: 0 };
+  let segs = [];
+  function pushSeg(label) { segs.push({ t: performance.now(), label: label, snap: Object.assign({}, tot) }); }
+  window.frecStateChange = function (text) {   // 設定変更を記録して区間を区切る
+    if (!window._frecOn) return;
+    window.frec(EV.STATE, 0, 0, 0, 0, 0, text);
+    pushSeg(text);
+  };
   const cnt = new Float64Array(32);       // イベントコード別の総数
   const pathCnt = new Float64Array(8);    // evaluateSimpleChordの経路別の総数
 
@@ -44,7 +53,8 @@
     A[i] = a || 0; B[i] = b || 0; C[i] = c || 0; D[i] = d || 0; E[i] = e || 0;
     S1[i] = s1 || null; S2[i] = s2 || null;
     cnt[code]++;
-    if (code === EV.EVAL) pathCnt[a | 0]++;
+    if (code === EV.EVAL) { pathCnt[a | 0]++; tot.ev++; }
+    else if (code === EV.STRUM) tot.st++;
   };
 
   // ── 1秒バケット（全体像用） ──────────────────────────────────────────────
@@ -59,11 +69,13 @@
   window.frecFrameDrop = function (ms) {
     if (!window._frecOn) return;
     ctr.fd++; if (ms > ctr.fdMax) ctr.fdMax = ms;
+    tot.fd++; tot.fdSum += ms;
     window.frec(EV.FDROP, ms);
   };
   window.frecHbDrop = function (ms) {
     if (!window._frecOn) return;
     ctr.hb++; if (ms > ctr.hbMax) ctr.hbMax = ms;
+    tot.hb++; tot.hbSum += ms;
     window.frec(EV.HBDROP, ms);
     autoIncident('HEARTBEAT ' + ms.toFixed(0) + 'ms', ms > 80);
   };
@@ -123,7 +135,7 @@
     const now = performance.now();
     markCount++; ctr.mk++;
     window.frec(EV.MARK, markCount);
-    incidents.push({ kind: 'MARK #' + markCount + '（耳でノイズを確認）', t: now, rows: snapshot(now - 3000, now) });
+    incidents.push({ kind: 'MARK #' + markCount + '（耳でノイズを確認）', t: now, rows: snapshot(now - 5000, now) });
     const marks = incidents.filter(x => x.kind.startsWith('MARK'));
     while (marks.length > 8) { incidents.splice(incidents.indexOf(marks[0]), 1); marks.shift(); }
     return markCount;
@@ -160,6 +172,7 @@
             offHist[aj < 5 ? 0 : aj < 10 ? 1 : aj < 20 ? 2 : aj < 30 ? 3 : aj < 50 ? 4 : 5]++;
             if (aj > 20) {
               ctr.as++; if (aj > ctr.asMax) ctr.asMax = aj;
+              tot.as++; tot.asSum += aj;
               window.frec(EV.ASTEP, j);
               autoIncident('AUDIO-CLOCK ' + (j > 0 ? '+' : '') + j.toFixed(0) + 'ms', aj > 30);
               medHist = [];
@@ -182,16 +195,12 @@
   function pollState() {
     if (typeof state === 'undefined') return;
     const s = [state.isPlaying ? 1 : 0, state.chordAuto ? 1 : 0, state.chordHold ? 1 : 0, state.audioPerformanceMode === 'low' ? 1 : 0];
+    const names = [['RHYTHM OFF', 'RHYTHM ON'], ['CHORD AUTO OFF', 'CHORD AUTO ON'], ['CHORD HOLD OFF', 'CHORD HOLD ON'], ['MODE HIGH QUALITY', 'MODE LOW POWER']];
     if (stateSnap) {
-      if (s[0] !== stateSnap[0]) window.frec(EV.STATE, 0, 0, 0, 0, 0, s[0] ? 'RHYTHM ON' : 'RHYTHM OFF');
-      if (s[1] !== stateSnap[1]) window.frec(EV.STATE, 0, 0, 0, 0, 0, s[1] ? 'CHORD AUTO ON' : 'CHORD AUTO OFF');
-      if (s[2] !== stateSnap[2]) window.frec(EV.STATE, 0, 0, 0, 0, 0, s[2] ? 'CHORD HOLD ON' : 'CHORD HOLD OFF');
-      if (s[3] !== stateSnap[3]) window.frec(EV.STATE, 0, 0, 0, 0, 0, s[3] ? 'MODE LOW POWER' : 'MODE HIGH QUALITY');
+      for (let i = 0; i < 4; i++) if (s[i] !== stateSnap[i]) window.frecStateChange(names[i][s[i]]);
     } else {
-      window.frec(EV.STATE, 0, 0, 0, 0, 0, s[0] ? 'RHYTHM ON' : 'RHYTHM OFF');
-      window.frec(EV.STATE, 0, 0, 0, 0, 0, s[1] ? 'CHORD AUTO ON' : 'CHORD AUTO OFF');
-      window.frec(EV.STATE, 0, 0, 0, 0, 0, s[2] ? 'CHORD HOLD ON' : 'CHORD HOLD OFF');
-      window.frec(EV.STATE, 0, 0, 0, 0, 0, s[3] ? 'MODE LOW POWER' : 'MODE HIGH QUALITY');
+      for (let i = 0; i < 4; i++) window.frec(EV.STATE, 0, 0, 0, 0, 0, names[i][s[i]]);
+      segs[0].label = '開始時: ' + names.map((n, i) => n[s[i]]).join(' / ');
     }
     stateSnap = s;
   }
@@ -216,6 +225,34 @@
       setTimeout(() => { b.textContent = '● MARK'; }, 700);
     });
     document.body.appendChild(b);
+
+    // GLOW切替（実験用）: 影・光彩・遷移・アニメーションを一括で無効にして、描画負荷が原因かを
+    // 同じ演奏の途中で切り替えて比較できるようにする。既定はON(通常)で、見た目は変わらない。
+    const g = document.createElement('div');
+    g.id = 'frec-glow-btn';
+    g.textContent = 'GLOW:ON';
+    Object.assign(g.style, {
+      position: 'fixed', top: '4px', left: 'calc(50% + 58px)',
+      zIndex: '450', padding: '6px 10px', borderRadius: '14px', fontSize: '11px',
+      letterSpacing: '1px', fontFamily: "'Orbitron',sans-serif", color: '#fff',
+      background: 'rgba(39,174,96,0.85)', border: '1px solid #a5d6a7',
+      userSelect: 'none', webkitUserSelect: 'none', touchAction: 'manipulation',
+    });
+    g.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation();
+      if (!document.getElementById('frec-noglow-style')) {
+        const st = document.createElement('style');
+        st.id = 'frec-noglow-style';
+        st.textContent = 'body.diag-noglow *,body.diag-noglow *::before,body.diag-noglow *::after{box-shadow:none!important;text-shadow:none!important;transition:none!important;animation:none!important;filter:none!important}body.diag-noglow .simple-key.pressed{transform:none!important}body.diag-noglow .chord-resolved-badge{display:none!important}';
+        document.head.appendChild(st);
+      }
+      const off = !document.body.classList.contains('diag-noglow');
+      document.body.classList.toggle('diag-noglow', off);
+      g.textContent = off ? 'GLOW:OFF' : 'GLOW:ON';
+      g.style.background = off ? 'rgba(127,127,127,0.85)' : 'rgba(39,174,96,0.85)';
+      window.frecStateChange(off ? 'GLOW OFF（影・光彩・遷移・アニメ無効）' : 'GLOW ON（通常）');
+    });
+    document.body.appendChild(g);
   }
 
   let tickId = null;
@@ -224,6 +261,8 @@
     t0 = performance.now(); head = 0; count = 0; curSec = -1; buckets.length = 0;
     prevPerf = null; prevProf = {}; ctr = bk(); incidents.length = 0; markCount = 0;
     cnt.fill(0); pathCnt.fill(0); offHist.fill(0); oN = 0; medHist = []; stateSnap = null;
+    for (const k in tot) tot[k] = 0;
+    segs = [{ t: t0, label: '開始', snap: Object.assign({}, tot) }];
     window._frecOn = true;
     tickId = setInterval(tick, 20);
     buildMarkButton();
@@ -283,6 +322,45 @@
     L.push('※連続した飛びは複数件(+40,+40…)に分かれて記録されることがあります。合計が停止時間の目安です。');
     L.push(`<5:${offHist[0]}  <10:${offHist[1]}  <20:${offHist[2]}  <30:${offHist[3]}  <50:${offHist[4]}  >=50:${offHist[5]}`);
     L.push('');
+    L.push('--- 区間別集計（設定変更で区切る。同じ演奏の途中でGLOW等を切り替えた比較用）---');
+    for (let i = 0; i < segs.length; i++) {
+      const a0 = segs[i], b0 = segs[i + 1];
+      const endT = b0 ? b0.t : now, endS = b0 ? b0.snap : tot, d = (endT - a0.t) / 1000;
+      if (d < 0.5) continue;
+      const g = k => endS[k] - a0.snap[k];
+      const perMin = x => (x / d * 60).toFixed(1);
+      L.push(`[${((a0.t - t0) / 1000).toFixed(1)}〜${((endT - t0) / 1000).toFixed(1)}s ${d.toFixed(1)}秒] ${a0.label}`);
+      L.push(`   コード判定${g('ev')} ストラム${g('st')} | 描画落ち${g('fd')}回(合計${g('fdSum').toFixed(0)}ms, ${perMin(g('fd'))}回/分) | 音飛び${g('as')}回(合計${g('asSum').toFixed(0)}ms, ${perMin(g('as'))}回/分) | HB遅延${g('hb')}回`);
+    }
+    // 相関サマリ: 音飛びの前後に何があったかを数える（目視ではなく数字で）
+    const ev = { fd100: [], hb: [], ct: [], st: [], pl: [], as: [] };
+    { const start = (head - count) & MASK;
+      for (let k = 0; k < count; k++) {
+        const i = (start + k) & MASK, c = CODE[i];
+        if (c === EV.FDROP && A[i] >= 100) ev.fd100.push(T[i]);
+        else if (c === EV.HBDROP) ev.hb.push(T[i]);
+        else if (c === EV.CT_ADD) ev.ct.push(T[i]);
+        else if (c === EV.STRUM) ev.st.push(T[i]);
+        else if (c === EV.PLAY) ev.pl.push(T[i]);
+        else if (c === EV.ASTEP) ev.as.push(T[i]);
+      } }
+    const near = (arr, t, lo, hi) => arr.some(x => x - t >= lo && x - t <= hi);
+    if (ev.as.length) {
+      let nFd = 0, nHb = 0, nCt = 0, nSt = 0, nPl = 0, nNone = 0;
+      for (const ta of ev.as) {
+        const a1 = near(ev.fd100, ta, -400, 200), a2 = near(ev.hb, ta, -400, 200),
+              a3 = near(ev.ct, ta, -600, 0), a4 = near(ev.st, ta, -300, 100), a5 = near(ev.pl, ta, -600, 0);
+        if (a1) nFd++; if (a2) nHb++; if (a3) nCt++; if (a4) nSt++; if (a5) nPl++;
+        if (!a1 && !a2 && !a3 && !a4 && !a5) nNone++;
+      }
+      const act = buckets.filter(b => b.notes > 0 || b.n['eval'] > 0 || b.n['drum-hit'] > 0);
+      const pc = f => act.length ? Math.round(act.filter(f).length / act.length * 100) : 0;
+      L.push('');
+      L.push('--- 音飛び(AUDIO-CLOCK-STEP)の相関サマリ ---');
+      L.push(`音飛び${ev.as.length}件のうち: 描画落ち≥100msが併発(前400ms〜後200ms)=${nFd}件 / HEARTBEAT遅延が併発=${nHb}件 / 直前600msにコードボタン押下=${nCt}件 / 直前300msにストラム発音=${nSt}件 / 直前600msにPLAYCHORD=${nPl}件 / どれにも該当しない=${nNone}件`);
+      L.push(`（比較用の基準）演奏のあった${act.length}秒のうち、コード判定があった秒=${pc(b => b.n['eval'] > 0)}% ストラム発音があった秒=${pc(b => b.notes > 0)}%。音飛びの前にこの割合より明らかに多く出ている操作が、関連が強い候補`);
+    }
+    L.push('');
     L.push('--- 1秒ごとの推移（直近最大120秒）---');
     L.push('秒 | 発音 steal | ドラム | コード判定 | evalMax pcMax efpMax rdMax bdMax stMax dtMax | 描画落ち(回/最大) HB(回/最大) 音飛び(回/最大) 入力遅れmax MARK');
     for (const b of buckets) {
@@ -290,7 +368,7 @@
       L.push(`${b.s} | ${b.notes} ${b.steals} | ${b.n['drum-hit']} | ${b.n['eval']} | ${f1(m['eval'])} ${f1(m['playChord'])} ${f1(m['elemFromPoint'])} ${f1(m['redrawPressed'])} ${f1(m['badge'])} ${f1(m['strum-trigger'])} ${f1(m['drum-hit'])} | ${c.fd}/${c.fdMax.toFixed(0)} ${c.hb}/${c.hbMax.toFixed(0)} ${c.as}/${c.asMax.toFixed(0)} ${c.lag.toFixed(0)} ${c.mk ? '●' : ''}`);
     }
     L.push('');
-    L.push(`--- 時系列（インシデント${incidents.length}件の前後を統合・重複排除。MARK=耳でノイズを確認した直前3秒／AUTO=音飛び・メインスレッド停止の前1秒後0.4秒）---`);
+    L.push(`--- 時系列（インシデント${incidents.length}件の前後を統合・重複排除。MARK=耳でノイズを確認した直前5秒／AUTO=音飛び・メインスレッド停止の前1秒後0.4秒）---`);
     const map = new Map();
     for (const inc of incidents) {
       for (const r of inc.rows) { const key = r[0] + '|' + r[9]; if (!map.has(key)) map.set(key, r); }  // 時刻+リング位置で一意（同時刻の別イベントを消さない）
