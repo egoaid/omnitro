@@ -311,6 +311,7 @@ function setupStrumplate() {
 
   sp.addEventListener('touchcancel', e => {
     e.preventDefault();
+    if (window._frecOn) frec(FREC.TCANCEL, 0, e.changedTouches.length, e.touches.length);
     for (let _ti = 0; _ti < e.changedTouches.length; _ti++) {
       const t = e.changedTouches[_ti];
       if (!strumFingers.has(t.identifier)) continue;

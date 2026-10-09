@@ -493,6 +493,7 @@ function buildSimpleChordGrid() {
 
   grid.addEventListener('touchcancel', e => {
     e.preventDefault();
+    if (window._frecOn) frec(FREC.TCANCEL, 1, e.changedTouches.length, e.touches.length);
     for (const t of e.changedTouches) {
       removeTouchKey(t.identifier);
     }

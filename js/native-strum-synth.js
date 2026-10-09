@@ -391,7 +391,7 @@ class NativeStrumSynth {
         // 計測のみ: 読み取ったgain値(g.value)と、設定済みエンベロープから計算した理論値を比較する。
         // 一致しなければSafariのAudioParam.valueが古い値を返している（フェード開始値がズレる）。
         let rawv = -1; try { rawv = g.value; } catch(e){}
-        frec(FREC.STEALDIAG, rawv, _expectedGain(v, now), (now - v.t0) * 1000, v.pk, 0);
+        frec(FREC.STEALDIAG, rawv, _expectedGain(v, now), (now - v.t0) * 1000, v.pk, this._pool.indexOf(v));
       }
       g.cancelScheduledValues(now);
       g.setValueAtTime(cur, now);
@@ -439,7 +439,7 @@ class NativeStrumSynth {
     perf.currentVoices = busy;
     if (busy > perf.maxConcurrentVoices) perf.maxConcurrentVoices = busy;
     omniProfEnd('strum-trigger', _pt0);
-    if (window._frecOn) frec(FREC.STRUM, window._omniLastIdx | 0, velocity * 100, stolen ? 1 : 0, performance.now() - _pt0, 0, noteStr);
+    if (window._frecOn) frec(FREC.STRUM, window._omniLastIdx | 0, velocity * 100, stolen ? 1 : 0, performance.now() - _pt0, now, noteStr);
   }
 
   // 鳴り終えたボイスの出力を切り離す共有タイマー（プール全体で1本のみ。
@@ -530,7 +530,7 @@ class NativeStrumSynth {
       this._triggerPooled(noteStr, velocity);
       return;
     }
-    if (window._frecOn) frec(FREC.STRUM, window._omniLastIdx | 0, velocity * 100, 0, 0, 0, noteStr);
+    if (window._frecOn) frec(FREC.STRUM, window._omniLastIdx | 0, velocity * 100, (this._activeVoices.length >= getMaxActiveVoices()) ? 1 : 0, 0, now, noteStr);
 
     // ── 同時発音数の安全上限チェック（通常演奏では発火しない） ──────────────
     if (this._activeVoices.length >= getMaxActiveVoices()) {
