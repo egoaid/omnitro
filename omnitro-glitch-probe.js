@@ -2,8 +2,9 @@
 //
 // 出力波形そのものに「段差（クリック）」があるかを調べるための受動プローブ。
 // 出力ノードを持たない（音は一切出さない・音声経路を変えない）。
-//   入力0 = instBus（コンプレッサー前＝ストラム/コード/サブの合流点）
-//   入力1 = masterOut（コンプ・リミッター通過後＝実際にスピーカーへ出る信号）
+//   入力は1つ（2ch）: ch0 = instBus（コンプレッサー前）, ch1 = masterOut（コンプ・リミッター通過後）。
+//   ※ v1.5.40 は入力を2つ持つ構成で初期化に失敗したため、録音用ワークレット(実績あり)と同じ
+//     「ChannelMerger → 入力1つのワークレット」構成に変更した（v1.5.41）。
 //
 // 128サンプル(1レンダー量子)ごとに、各入力について次の3値だけを計算する:
 //   peak = 最大振幅
@@ -50,43 +51,41 @@ class OmnitroGlitchProbe extends AudioWorkletProcessor {
     if (!this.enabled) return true;
     const base = this.w * 6;
     this.frames[this.w] = currentFrame;
+    const inp = inputs[0];
     for (let k = 0; k < 2; k++) {
-      const inp = inputs[k];
+      const ch = inp && inp.length > k ? inp[k] : null;   // ch0 = コンプ前(instBus), ch1 = 出力後(masterOut)
       let peak = 0, d1 = 0, d2 = 0;
-      let a = this.p1[k], b = this.p2[k];            // a = x[n-1], b = x[n-2]
-      if (inp && inp.length > 0) {
-        for (let c = 0; c < inp.length; c++) {
-          const ch = inp[c];
-          if (!ch) continue;
-          // 2ch目以降は境界状態を持たず、量子内のみで計算（簡易。主にch0を見る）
-          let x1 = c === 0 ? a : ch[0], x2 = c === 0 ? b : ch[0];
-          for (let i = 0; i < ch.length; i++) {
-            const x = ch[i];
-            const ax = x < 0 ? -x : x; if (ax > peak) peak = ax;
-            const dd1 = x - x1; const ad1 = dd1 < 0 ? -dd1 : dd1; if (ad1 > d1) d1 = ad1;
-            const dd2 = x - 2 * x1 + x2; const ad2 = dd2 < 0 ? -dd2 : dd2; if (ad2 > d2) d2 = ad2;
-            x2 = x1; x1 = x;
-          }
-          if (c === 0) { a = x1; b = x2; }
+      let x1 = this.p1[k], x2 = this.p2[k];               // x1 = x[n-1], x2 = x[n-2]
+      if (ch) {
+        for (let i = 0; i < ch.length; i++) {
+          const x = ch[i];
+          const ax = x < 0 ? -x : x; if (ax > peak) peak = ax;
+          const dd1 = x - x1; const ad1 = dd1 < 0 ? -dd1 : dd1; if (ad1 > d1) d1 = ad1;
+          const dd2 = x - 2 * x1 + x2; const ad2 = dd2 < 0 ? -dd2 : dd2; if (ad2 > d2) d2 = ad2;
+          x2 = x1; x1 = x;
         }
       }
-      this.p1[k] = a; this.p2[k] = b;
+      this.p1[k] = x1; this.p2[k] = x2;
       this.stats[base + k * 3] = peak;
       this.stats[base + k * 3 + 1] = d1;
       this.stats[base + k * 3 + 2] = d2;
 
-      // 即時フラグ: 移動平均の12倍超 かつ 絶対値0.004超（通常のアタック/ストラムの立ち上がりは緩やか）
-      const e0 = this.ema[k];
-      if (d2 > 0.004 && d2 > e0 * 12 && currentFrame - this.lastFlagFrame[k] > sampleRate * 0.02) {
+      // 即時フラグ: 直近60量子(約0.17秒)のd2最大値の1.7倍超 かつ 絶対値0.02超。
+      // （Pythonシミュレーションで調整: 通常演奏の誤検出0件/秒、出力バッファ欠損(無音挿入)3〜70msを78〜100%検出。
+      //   旧方式の「移動平均の12倍」は矩形波のエッジで常時誤検出するため廃止）
+      let bmax = 0;
+      for (let j = 1; j <= 60 && j < this.n; j++) {
+        const v = this.stats[((this.w - j + this.RING) % this.RING) * 6 + k * 3 + 2];
+        if (v > bmax) bmax = v;
+      }
+      if (this.n >= 60 && d2 > 0.02 && d2 > bmax * 1.7 && currentFrame - this.lastFlagFrame[k] > sampleRate * 0.02) {
         if (currentFrame - this.secFrame > sampleRate) { this.secFrame = currentFrame; this.flagsThisSec = 0; }
         if (this.flagsThisSec < 40) {
           this.flagsThisSec++;
           this.lastFlagFrame[k] = currentFrame;
-          this.port.postMessage({ type: 'flag', input: k, frame: currentFrame, sampleRate, peak, d1, d2, ema: e0 });
+          this.port.postMessage({ type: 'flag', input: k, frame: currentFrame, sampleRate, peak, d1, d2, ema: bmax });
         }
       }
-      // 異常値に移動平均が引っ張られないよう、上限をかけて更新
-      this.ema[k] = e0 + 0.01 * (Math.min(d2, e0 * 4 + 1e-4) - e0);
     }
     this.w = (this.w + 1) % this.RING;
     if (this.n < this.RING) this.n++;

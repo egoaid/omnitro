@@ -63,7 +63,7 @@
   const buckets = [];
   let cur = null, curSec = -1;
   let prevPerf = null, prevProf = {};
-  const bk = () => ({ fd: 0, fdMax: 0, hb: 0, hbMax: 0, as: 0, asMax: 0, lag: 0, mk: 0 });
+  const bk = () => ({ fd: 0, fdMax: 0, hb: 0, hbMax: 0, as: 0, asMax: 0, lag: 0, mk: 0, gl: 0 });
   let ctr = bk();
 
   window.frecFrameDrop = function (ms) {
@@ -89,7 +89,7 @@
   function closeBucket(sec) {
     const p = window._omniPerf || {};
     const prof = window._omniProf || {};
-    const b = { s: sec, ctr: ctr,
+    const b = { s: sec, ctr: ctr, off: offLast,
       notes: (p.notesTriggered || 0) - (prevPerf ? prevPerf.notes : 0),
       steals: (p.voicesStolen || 0) - (prevPerf ? prevPerf.steals : 0),
       n: {}, mx: {} };
@@ -131,6 +131,21 @@
       while (autos.length > 6) { incidents.splice(incidents.indexOf(autos[0]), 1); autos.shift(); }
     }, 400);
   }
+  // ── 波形プローブによる雑音の自動検出 → インシデント自動保存（MARK不要） ──────────
+  let noiseCount = 0, lastNoiseT = -1e9;
+  function autoNoise(m) {
+    const now = performance.now();
+    if (now - lastNoiseT < 700) return;              // 連続した検出は1件にまとめる
+    lastNoiseT = now; noiseCount++;
+    const n = noiseCount;
+    setTimeout(() => {                               // 検出の「後」0.5秒も保存
+      const inc = { kind: 'NOISE自動検出 #' + n + '（' + (m.input ? '出力後' : 'コンプ前') + ' d2=' + m.d2.toFixed(3) + ' 直近最大=' + m.ema.toFixed(3) + '）', t: now, rows: snapshot(now - 2000, now + 500) };
+      incidents.push(inc);
+      requestDump(inc, 2.6);
+      const ns = incidents.filter(x => x.kind.startsWith('NOISE'));
+      while (ns.length > 30) { incidents.splice(incidents.indexOf(ns[0]), 1); ns.shift(); }
+    }, 500);
+  }
   let markCount = 0;
   window.frecMark = function () {
     if (!window._frecOn) return 0;
@@ -141,7 +156,7 @@
     incidents.push(_inc);
     requestDump(_inc, 5.3);
     const marks = incidents.filter(x => x.kind.startsWith('MARK'));
-    while (marks.length > 8) { incidents.splice(incidents.indexOf(marks[0]), 1); marks.shift(); }
+    while (marks.length > 12) { incidents.splice(incidents.indexOf(marks[0]), 1); marks.shift(); }
     return markCount;
   };
 
@@ -152,6 +167,7 @@
   // 変化したら記録する。
   const offHist = [0, 0, 0, 0, 0, 0];   // |変化| <5,<10,<20,<30,<50,>=50 ms
   let o1 = 0, o2 = 0, o3 = 0, oN = 0, medHist = [], lastTick = 0, stateSnap = null;
+  let offBase = null, offLast = 0;   // v1.5.41: 音声時計の累積遅れ（開始時の水準との差）
   function tick() {
     const now = performance.now();
     if (lastTick) {
@@ -168,6 +184,7 @@
         if (++oN > 3) oN = 3;
         if (oN === 3) {
           const m = Math.max(Math.min(o1, o2), Math.min(Math.max(o1, o2), o3));
+          if (offBase === null) offBase = m; offLast = m - offBase;
           // 連続した停止は20msごとの小さな増加として現れるため、約200ms(10ティック)前
           // との差で判定する。検出後は履歴を捨て、新しい水準を基準にし直す
           // （停止後もオーディオ時計の遅れは残るので、同じ飛びを重複報告しない）。
@@ -187,7 +204,7 @@
       } else { oN = 0; medHist = []; }
     } catch (e) {}
 
-    if (!probe.node && !probe.initing && probe.on) probeInit();
+    if (!probe.node && !probe.initing && !probe.tried && probe.on) probeInit();
     const sec = Math.floor((now - t0) / 1000);
     if (sec !== curSec) {
       if (curSec >= 0) closeBucket(curSec);
@@ -296,40 +313,52 @@
   // 追加接続し、出力波形の段差（クリック）を直接調べる。音声経路は変更しない。
   // ・PROBEボタンでON/OFFでき、OFF時は両方のバスから切断する（診断の有無での比較用）。
   // ・グラフ内の信号しか見えない。ブラウザ/OS/デバイス段の出力欠損はここには現れない。
-  const probe = { node: null, initing: false, on: true, status: '未初期化', flags: 0, dumps: 0,
+  const probe = { node: null, merger: null, tried: false, env: '', initing: false, on: true, status: '未初期化', flags: 0, dumps: 0,
                   gran: null, leadMin: Infinity, leadMax: -Infinity, leadN: 0, outTs: 'unknown' };
   const pendingDump = new Map();
   let dumpSeq = 0;
   function probeConnect(on) {
-    if (!probe.node) return;
+    if (!probe.node || !probe.merger) return;
     try {
-      if (on) { window._instBus.connect(probe.node, 0, 0); window._recMasterOut.connect(probe.node, 0, 1); }
-      else { try { window._instBus.disconnect(probe.node); } catch (e) {} try { window._recMasterOut.disconnect(probe.node); } catch (e) {} }
-    } catch (e) { probe.status = '接続エラー: ' + (e && e.message ? e.message : e); }
+      if (on) { window._instBus.connect(probe.merger, 0, 0); window._recMasterOut.connect(probe.merger, 0, 1); }
+      else { try { window._instBus.disconnect(probe.merger); } catch (e) {} try { window._recMasterOut.disconnect(probe.merger); } catch (e) {} }
+    } catch (e) { probe.status = '接続エラー: ' + errText(e); }
   }
+  const errText = (e) => (e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : String(e)) + (e && e.code != null ? ' (code ' + e.code + ')' : '');
+  // 初期化は1回だけ試す（失敗時に20msごとの再試行で負荷をかけない。v1.5.40の不具合の修正）。
+  // PROBEボタンをOFF→ONし直すと再試行する。失敗した段階(stage)とエラー詳細をレポートに出す。
   async function probeInit() {
-    if (probe.node || probe.initing) return;
+    if (probe.node || probe.initing || probe.tried) return;
     if (!window._instBus || !window._recMasterOut) return;           // まだ音声グラフ未作成
-    probe.initing = true;
+    probe.initing = true; probe.tried = true;
+    let stage = 'start';
     try {
       const toneCtx = Tone.getContext(), ctx = toneCtx.rawContext;
+      probe.env = 'audioWorklet=' + (ctx.audioWorklet ? 'あり' : 'なし') + ' / isSecureContext=' + window.isSecureContext + ' / 実AudioWorkletNode=' + (typeof AudioWorkletNode);
       if (!ctx.audioWorklet) { probe.status = 'AudioWorklet非対応'; return; }
+      stage = 'addAudioWorkletModule';
       await toneCtx.addAudioWorkletModule('omnitro-glitch-probe.js');
+      stage = 'createAudioWorkletNode';
+      // 録音用ワークレット(recCaptureInit)と同じ形: ChannelMerger → 入力1つ・出力0のワークレット
+      const merger = ctx.createChannelMerger(2);
       const node = toneCtx.createAudioWorkletNode('omnitro-glitch-probe', {
-        numberOfInputs: 2, numberOfOutputs: 0, channelCount: 2,
+        numberOfInputs: 1, numberOfOutputs: 0, channelCount: 2,
         channelCountMode: 'explicit', channelInterpretation: 'discrete' });
+      stage = 'connect';
+      merger.connect(node);
       node.port.onmessage = (e) => {
         const m = e.data;
         if (!window._frecOn) return;
         if (m.type === 'flag') {
-          probe.flags++;
+          probe.flags++; ctr.gl++;
+          autoNoise(m);
           window.frec(EV.GLITCH, m.input, m.peak, m.d1, m.d2, m.frame / m.sampleRate, m.ema.toFixed(5));
         } else if (m.type === 'dump') {
           const inc = pendingDump.get(m.id); pendingDump.delete(m.id);
           if (inc) { inc.probe = m; probe.dumps++; }
         }
       };
-      probe.node = node;
+      probe.node = node; probe.merger = merger;
       if (probe.on) probeConnect(true);
       probe.status = probe.on ? '稼働中（instBus + masterOut を受動監視）' : 'OFF';
       // currentTimeの更新刻み（非ブロッキング：MessageChannelで多数回読む）
@@ -347,7 +376,7 @@
         mc.port2.postMessage(0);
       } catch (e) {}
     } catch (e) {
-      probe.status = '初期化失敗: ' + (e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : e);
+      probe.status = '初期化失敗（段階=' + stage + '）: ' + errText(e);
     } finally { probe.initing = false; }
   }
   function requestDump(inc, seconds) {
@@ -360,6 +389,7 @@
   }
   window.frecProbeToggle = function () {
     probe.on = !probe.on;
+    if (probe.on && !probe.node) probe.tried = false;   // 失敗していた場合はON操作で再試行
     if (probe.node) { probeConnect(probe.on); probe.status = probe.on ? '稼働中（instBus + masterOut を受動監視）' : 'OFF'; }
     window.frecStateChange(probe.on ? 'PROBE ON（出力波形を監視）' : 'PROBE OFF（監視なし）');
     return probe.on;
@@ -370,8 +400,8 @@
     if (window._frecOn) return;
     t0 = performance.now(); head = 0; count = 0; curSec = -1; buckets.length = 0;
     prevPerf = null; prevProf = {}; ctr = bk(); incidents.length = 0; markCount = 0;
-    probe.flags = 0; probe.dumps = 0; pendingDump.clear();
-    cnt.fill(0); pathCnt.fill(0); offHist.fill(0); oN = 0; medHist = []; stateSnap = null;
+    probe.flags = 0; probe.dumps = 0; noiseCount = 0; lastNoiseT = -1e9; pendingDump.clear();
+    cnt.fill(0); pathCnt.fill(0); offHist.fill(0); offBase = null; offLast = 0; oN = 0; medHist = []; stateSnap = null;
     for (const k in tot) tot[k] = 0;
     segs = [{ t: t0, label: '開始', snap: Object.assign({}, tot) }];
     window._frecOn = true;
@@ -402,7 +432,7 @@
       case EV.HBDROP:  return `${ts} HEARTBEAT-DROP ${f1(a)}ms`;
       case EV.ASTEP:   return `${ts} ★AUDIO-CLOCK-STEP ${a > 0 ? '+' : ''}${f1(a)}ms（オーディオ処理の遅れ/飛び）`;
       case EV.STEALDIAG: return `${ts}   └奪取時の診断: g.value読取=${a.toFixed(4)} 理論値=${b.toFixed(4)} (ピーク比${d > 0 ? Math.round(b / d * 100) : '?'}%) 経過${f1(c)}ms${e >= 0 && e < 99 ? ' プール#' + e : ''} ${Math.abs(a - b) > Math.max(0.002, b * 0.3) ? '★読取値が理論値とズレ' : ''}`;
-      case EV.GLITCH:  return `${ts} ◆WAVE-GLITCH候補 ${a ? '出力後(masterOut)' : 'コンプ前(instBus)'} 音声時刻=${e.toFixed(3)}s peak=${b.toFixed(3)} 1次差=${c.toFixed(3)} 2次差=${d.toFixed(3)} (移動平均${s1})`;
+      case EV.GLITCH:  return `${ts} ◆WAVE-GLITCH候補 ${a ? '出力後(masterOut)' : 'コンプ前(instBus)'} 音声時刻=${e.toFixed(3)}s peak=${b.toFixed(3)} 1次差=${c.toFixed(3)} 2次差=${d.toFixed(3)} (直近0.17秒の最大d2=${s1})`;
       case EV.TCANCEL: return `${ts} ★TOUCHCANCEL ${a ? 'コード' : 'ストラム'} 取消=${b}本 画面上の残り=${c}本`;
       case EV.MARKER:  return `${ts} ▶▶▶ ${s1}`;
       case EV.MARK:    return `${ts} ●MARK #${a}`;
@@ -421,7 +451,7 @@
     L.push(`BUILD ${window._omniBuild || '?'}  MODE ${low ? 'LOW POWER' : 'HIGH QUALITY'}  記録時間 ${((now - t0) / 1000).toFixed(1)}s`);
     if (typeof state !== 'undefined')
       L.push(`現在の設定: RHYTHM=${state.isPlaying ? 'ON' : 'OFF'} CHORD_AUTO=${state.chordAuto ? 'ON' : 'OFF'} CHORD_HOLD=${state.chordHold ? 'ON' : 'OFF'}`);
-    L.push(`MARK回数=${markCount}  AUDIO-CLOCK-STEP総数=${cnt[EV.ASTEP]}  FRAME-DROP総数=${cnt[EV.FDROP]}  HEARTBEAT-DROP総数=${cnt[EV.HBDROP]}  INPUT-LAG(>40ms)総数=${cnt[EV.LAG]}`);
+    L.push(`MARK回数=${markCount}  AUDIO-CLOCK-STEP総数=${cnt[EV.ASTEP]}  FRAME-DROP総数=${cnt[EV.FDROP]}  HEARTBEAT-DROP総数=${cnt[EV.HBDROP]}  INPUT-LAG(>40ms)総数=${cnt[EV.LAG]}  TOUCHCANCEL総数=${cnt[EV.TCANCEL]}  雑音自動検出(波形)=${noiseCount}件(生フラグ${probe.flags})`);
     L.push('');
     L.push('--- 処理時間 (n=回数 avg/max ms) ---');
     const prof = window._omniProf || {};
@@ -442,6 +472,7 @@
     } catch (e) {}
     L.push(`ctx.currentTime更新刻み(起動時300ms計測): ${probe.gran ? (probe.gran.n ? `n=${probe.gran.n} 最小=${probe.gran.min.toFixed(2)}ms 中央=${probe.gran.med.toFixed(2)}ms 最大=${probe.gran.max.toFixed(2)}ms` : '変化を観測できず') : '未計測'}`);
     L.push(`getOutputTimestamp: ${probe.outTs}${probe.leadN ? ` / currentTime−出力位置 の先行量 最小=${probe.leadMin.toFixed(1)}ms 最大=${probe.leadMax.toFixed(1)}ms (n=${probe.leadN})` : ''}`);
+    if (probe.env) L.push(`環境: ${probe.env}`);
     L.push(`プローブ状態: ${probe.status} / 即時フラグ総数=${probe.flags} / ダンプ取得=${probe.dumps}件`);
     L.push('※プローブが見るのはWeb Audioグラフ内の信号のみ。ブラウザの出力バッファ・OS・デバイス段の欠損は検出できない。');
     L.push('');
@@ -485,13 +516,45 @@
     }
     L.push('');
     L.push('--- 1秒ごとの推移（直近最大120秒）---');
-    L.push('秒 | 発音 steal | ドラム | コード判定 | evalMax pcMax efpMax rdMax bdMax stMax dtMax | 描画落ち(回/最大) HB(回/最大) 音飛び(回/最大) 入力遅れmax MARK');
+    L.push('秒 | 発音 steal | ドラム | コード判定 | evalMax pcMax efpMax rdMax bdMax stMax dtMax | 描画落ち(回/最大) HB(回/最大) 音飛び(回/最大) 入力遅れmax 音声時計の累積遅れms 雑音検出(波形) MARK');
     for (const b of buckets) {
       const m = b.mx, c = b.ctr;
-      L.push(`${b.s} | ${b.notes} ${b.steals} | ${b.n['drum-hit']} | ${b.n['eval']} | ${f1(m['eval'])} ${f1(m['playChord'])} ${f1(m['elemFromPoint'])} ${f1(m['redrawPressed'])} ${f1(m['badge'])} ${f1(m['strum-trigger'])} ${f1(m['drum-hit'])} | ${c.fd}/${c.fdMax.toFixed(0)} ${c.hb}/${c.hbMax.toFixed(0)} ${c.as}/${c.asMax.toFixed(0)} ${c.lag.toFixed(0)} ${c.mk ? '●' : ''}`);
+      L.push(`${b.s} | ${b.notes} ${b.steals} | ${b.n['drum-hit']} | ${b.n['eval']} | ${f1(m['eval'])} ${f1(m['playChord'])} ${f1(m['elemFromPoint'])} ${f1(m['redrawPressed'])} ${f1(m['badge'])} ${f1(m['strum-trigger'])} ${f1(m['drum-hit'])} | ${c.fd}/${c.fdMax.toFixed(0)} ${c.hb}/${c.hbMax.toFixed(0)} ${c.as}/${c.asMax.toFixed(0)} ${c.lag.toFixed(0)} ${b.off.toFixed(0)} ${c.gl} ${c.mk ? '●' : ''}`);
     }
     // ── 出力波形プローブの解析（インシデントごと） ────────────────────────────
     function median(arr) { if (!arr.length) return 0; const c = Float32Array.from(arr).sort(); return c[c.length >> 1]; }
+    // ── 雑音自動検出(波形プローブ)の相関サマリ ───────────────────────────────
+    { const gl = [], stl = [], stn = [];
+      const ev2 = { fd: [], ct: [], st: [], stl: [], as: [], tc: [] };
+      const start0 = (head - count) & MASK;
+      for (let k = 0; k < count; k++) {
+        const i = (start0 + k) & MASK, c = CODE[i];
+        if (c === EV.GLITCH) gl.push(T[i]);
+        else if (c === EV.FDROP && A[i] >= 60) ev2.fd.push(T[i]);
+        else if (c === EV.EVAL) ev2.ct.push(T[i]);
+        else if (c === EV.STRUM) { ev2.st.push(T[i]); if (C[i]) ev2.stl.push(T[i]); }
+        else if (c === EV.ASTEP) ev2.as.push(T[i]);
+        else if (c === EV.TCANCEL) ev2.tc.push(T[i]);
+      }
+      const nr = (arr, t, lo, hi) => arr.some(x => x - t >= lo && x - t <= hi);
+      L.push('');
+      L.push('--- 雑音自動検出(出力波形の段差/欠損) の相関サマリ（検出の前150ms〜後50msに何があったか） ---');
+      if (!probe.node) L.push('プローブ未稼働のため検出なし（上の「プローブ状態」を参照）');
+      else if (!gl.length) L.push('検出0件: 記録時間中、出力波形に段差・欠損は検出されなかった（検出方式の限界は上記参照）');
+      else {
+        let a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0, none = 0;
+        for (const t of gl) {
+          const f1 = nr(ev2.st, t, -150, 50), f2 = nr(ev2.stl, t, -150, 50), f3 = nr(ev2.ct, t, -150, 50),
+                f4 = nr(ev2.as, t, -150, 50), f5 = nr(ev2.fd, t, -150, 50), f6 = nr(ev2.tc, t, -300, 50);
+          if (f1) a1++; if (f2) a2++; if (f3) a3++; if (f4) a4++; if (f5) a5++; if (f6) a6++;
+          if (!f1 && !f3 && !f4 && !f5 && !f6) none++;
+        }
+        L.push(`生フラグ${gl.length}件（自動保存インシデント${noiseCount}件）のうち: ストラム発音あり=${a1}（うちSTEAL=${a2}） / コード判定あり=${a3} / 音声クロック異常あり=${a4} / 描画落ち≥60msあり=${a5} / touchcancelあり=${a6} / どれもなし=${none}`);
+        const actS = buckets.filter(b => b.notes > 0 || b.n['eval'] > 0);
+        const pc2 = f => actS.length ? Math.round(actS.filter(f).length / actS.length * 100) : 0;
+        L.push(`（比較用の基準）演奏のあった${actS.length}秒のうち ストラム発音のあった秒=${pc2(b => b.notes > 0)}% コード判定のあった秒=${pc2(b => b.n['eval'] > 0)}% 描画落ちのあった秒=${pc2(b => b.ctr && b.ctr.fd > 0)}%`);
+      }
+    }
     L.push('');
     L.push('--- 出力波形プローブ：インシデント窓内の2次差分(d2)上位候補 ---');
     L.push('d2=2次差分の最大値（クリック/段差の指標）。倍率=d2÷窓内の中央値(peak>0.001の量子のみ)。音声時刻差は直近のSTRUM発音(音声時刻)との差で、+はSTRUMより後、STEAL印はそのSTRUMがボイス奪取。');
@@ -508,8 +571,8 @@
         for (let j = 0; j < k; j++) { if (pr.stats[j * 6 + inp * 3] > 0.001) { d2s.push(pr.stats[j * 6 + inp * 3 + 2]); idxs.push(j); } }
         const med = Math.max(median(d2s), 1e-5);
         const order = idxs.slice().sort((x, y) => pr.stats[y * 6 + inp * 3 + 2] - pr.stats[x * 6 + inp * 3 + 2]).slice(0, 4);
-        const over = idxs.filter(j => pr.stats[j * 6 + inp * 3 + 2] > Math.max(0.004, med * 12)).length;
-        L.push(`  ${inp ? '出力後(masterOut)' : 'コンプ前(instBus)'}: 中央値d2=${med.toFixed(4)} 倍率>12かつd2>0.004の量子=${over}個`);
+        const over = idxs.filter((j, ii) => { const v = pr.stats[j * 6 + inp * 3 + 2]; let bm = 0; for (let q = Math.max(0, j - 60); q < j; q++) bm = Math.max(bm, pr.stats[q * 6 + inp * 3 + 2]); return v > 0.02 && v > bm * 1.7; }).length;
+        L.push(`  ${inp ? '出力後(masterOut)' : 'コンプ前(instBus)'}: 中央値d2=${med.toFixed(4)} d2>0.02かつ直前0.17秒の最大の1.7倍超の量子=${over}個`);
         for (const j of order) {
           const d2 = pr.stats[j * 6 + inp * 3 + 2], d1 = pr.stats[j * 6 + inp * 3 + 1], pk = pr.stats[j * 6 + inp * 3];
           const tAudio = pr.frames[j] / sr;

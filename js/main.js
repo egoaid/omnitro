@@ -2,8 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-window._omniBuild = 'v1.5.40';
-console.log('%c[omnitro] build: v1.5.40 — 診断ビルド：出力波形プローブ(PROBEボタン)・touchcancel記録・STRUMに音声時刻を記録（音声経路は変更なし）', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.42';
+console.log('%c[omnitro] build: v1.5.42 — 診断ビルド：出力波形の雑音を自動検出してログ保存（MARK不要）（音声経路は変更なし）', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();
