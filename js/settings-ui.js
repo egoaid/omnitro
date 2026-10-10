@@ -78,6 +78,21 @@ function setupSettings() {
 
   // MIDI STRUM MODE: ON=MIDIキーボードをストラムプレートの音配列に強制マッピング
   //                   OFF=通常の半音階（既定）
+  // VISUAL EFFECTS LIGHT: 影・光彩・遷移・アニメを省く軽量表示（既定ON）。保存して次回も維持する
+  const fxTog = byId('tog-fx-light');
+  if (fxTog) {
+    let saved = null;
+    try { saved = localStorage.getItem('omnitro_fx_light'); } catch (e) {}
+    const on0 = saved === null ? true : saved === '1';
+    fxTog.classList.toggle('on', on0);
+    document.body.classList.toggle('fx-light', on0);
+    fxTog.addEventListener('click', () => {
+      const on = fxTog.classList.contains('on');
+      document.body.classList.toggle('fx-light', on);
+      try { localStorage.setItem('omnitro_fx_light', on ? '1' : '0'); } catch (e) {}
+    });
+  }
+
   const midiStrumTog = byId('tog-midi-strum');
   if (midiStrumTog) {
     state.midiStrumMode = midiStrumTog.classList.contains('on');

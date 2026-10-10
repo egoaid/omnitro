@@ -512,3 +512,24 @@
   }
   .strum-hint.hidden { opacity: 0; }
 
+
+
+  /* ─── 軽量表示（VISUAL EFFECTS: LIGHT）v1.5.43 ─────────────────────────────
+     v1.5.42 の実機レポートで、GLOW OFF（影・光彩・遷移・アニメ無効）にすると
+     描画落ちが 234〜490回/分 → 10回/分、音声クロック異常が 35〜110回/分 → 0 になり、
+     同じ演奏（コード+ストラム+リズム）でノイズが出なくなった。その構成を既定にする。
+     押下表示は背景色・枠色の変化で維持される（影/拡大/遷移のみ無効）。
+     録音LED・フィル待機などの「状態を示す点滅」は機能表示なので除外する。 */
+  body.fx-light *:not(.fill-queued):not(.fill-active):not(.randomize-pending):not(#rec-led):not(#mic-led),
+  body.fx-light *:not(.fill-queued):not(.fill-active):not(.randomize-pending):not(#rec-led):not(#mic-led)::before,
+  body.fx-light *:not(.fill-queued):not(.fill-active):not(.randomize-pending):not(#rec-led):not(#mic-led)::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transition: none !important;
+    animation: none !important;
+    filter: none !important;
+  }
+  body.fx-light .fill-queued, body.fx-light .fill-active, body.fx-light .randomize-pending,
+  body.fx-light #rec-led, body.fx-light #mic-led { box-shadow: none !important; filter: none !important; }
+  body.fx-light .simple-key.pressed { transform: none !important; }
+  body.fx-light .chord-resolved-badge { display: none !important; }
