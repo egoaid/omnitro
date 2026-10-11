@@ -227,12 +227,12 @@
       } else probe.outTs = 'unsupported';
     } catch (e) {}
     if (typeof state === 'undefined') return;
-    const s = [state.isPlaying ? 1 : 0, state.chordAuto ? 1 : 0, state.chordHold ? 1 : 0, state.audioPerformanceMode === 'low' ? 1 : 0];
-    const names = [['RHYTHM OFF', 'RHYTHM ON'], ['CHORD AUTO OFF', 'CHORD AUTO ON'], ['CHORD HOLD OFF', 'CHORD HOLD ON'], ['MODE HIGH QUALITY', 'MODE LOW POWER']];
+    const s = [state.isPlaying ? 1 : 0, state.chordAuto ? 1 : 0, state.chordHold ? 1 : 0, state.audioPerformanceMode === 'low' ? 1 : 0, document.body.classList.contains('fx-light') ? 1 : 0];
+    const names = [['RHYTHM OFF', 'RHYTHM ON'], ['CHORD AUTO OFF', 'CHORD AUTO ON'], ['CHORD HOLD OFF', 'CHORD HOLD ON'], ['MODE HIGH QUALITY', 'MODE LOW POWER'], ['VISUAL FX FULL', 'VISUAL FX LIGHT']];
     if (stateSnap) {
-      for (let i = 0; i < 4; i++) if (s[i] !== stateSnap[i]) window.frecStateChange(names[i][s[i]]);
+      for (let i = 0; i < 5; i++) if (s[i] !== stateSnap[i]) window.frecStateChange(names[i][s[i]]);
     } else {
-      for (let i = 0; i < 4; i++) window.frec(EV.STATE, 0, 0, 0, 0, 0, names[i][s[i]]);
+      for (let i = 0; i < 5; i++) window.frec(EV.STATE, 0, 0, 0, 0, 0, names[i][s[i]]);
       segs[0].label = '開始時: ' + names.map((n, i) => n[s[i]]).join(' / ');
     }
     stateSnap = s;
@@ -395,6 +395,55 @@
     return probe.on;
   };
 
+
+  // ── ブラックボックス（v1.5.44）: フリーズ/強制終了/クラッシュの原因調査用 ──────────
+  // 記録中は2秒ごとに「直近の状態」をlocalStorageへ上書き保存する。ページが固まって
+  // 強制終了しても、次回起動時のレポートに「前回セッションの最後の記録」として出る。
+  // （固まっている最中はJSが動かないので、固まる直前までの記録が残る）
+  const BB_KEY = 'omnitro_blackbox_v1';
+  let bbPrev = null;
+  try { const raw = localStorage.getItem(BB_KEY); if (raw) bbPrev = JSON.parse(raw); } catch (e) {}
+  let bbTimer = null, bbHooked = false;
+  function bbWrite(clean) {
+    try {
+      const nowT = performance.now();
+      const rows = snapshot(nowT - 8000, nowT + 10).slice(-70);
+      const ev = rows.map(r => [Math.round(r[0] - t0), r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]]);
+      const seg = buckets.slice(-15).map(b => [b.s, b.notes, b.steals, b.n['eval'] | 0, b.ctr.fd, b.ctr.fdMax | 0, b.ctr.hb, b.ctr.hbMax | 0, b.ctr.as, b.ctr.lag | 0, Math.round(b.off)]);
+      let cs = null, ct = null, tv = -1;
+      try { const c = Tone.getContext().rawContext; cs = c.state; ct = +c.currentTime.toFixed(1); } catch (e) {}
+      try { if (typeof chordSynth !== 'undefined' && chordSynth) tv = chordSynth._voices.length; } catch (e) {}
+      const o = { b: window._omniBuild, w: Date.now(), up: +((nowT - t0) / 1000).toFixed(1), vis: document.visibilityState, clean: !!clean,
+        mode: state.audioPerformanceMode, fx: document.body.classList.contains('fx-light') ? 1 : 0, ca: state.chordAuto ? 1 : 0, rh: state.isPlaying ? 1 : 0,
+        cs: cs, ct: ct, tv: tv, seg: seg, ev: ev };
+      localStorage.setItem(BB_KEY, JSON.stringify(o));
+    } catch (e) {}
+  }
+  function bbStart() {
+    if (bbTimer) clearInterval(bbTimer);
+    bbTimer = setInterval(() => bbWrite(false), 2000);
+    if (!bbHooked) {
+      bbHooked = true;
+      window.addEventListener('pagehide', () => { if (window._frecOn) bbWrite(true); });
+      document.addEventListener('visibilitychange', () => { if (window._frecOn && document.visibilityState === 'hidden') bbWrite(false); });
+    }
+  }
+  function bbSection(L) {
+    L.push('');
+    L.push('--- 前回セッションの最後の記録（ブラックボックス） ---');
+    if (!bbPrev) { L.push('前回の記録なし（初回、または記録モニターを開かずに終了）'); return; }
+    const o = bbPrev;
+    const d = new Date(o.w);
+    L.push(`最終保存: ${d.toLocaleString('ja-JP')} / build=${o.b} / 稼働${o.up}秒 / 画面=${o.vis} / 正常終了(pagehide)=${o.clean ? 'はい' : 'いいえ'}`);
+    L.push(`設定: MODE=${o.mode} LIGHT=${o.fx ? 'ON' : 'OFF'} CHORD_AUTO=${o.ca ? 'ON' : 'OFF'} RHYTHM=${o.rh ? 'ON' : 'OFF'} / AudioContext=${o.cs} currentTime=${o.ct}s / Tone chordSynth voice=${o.tv}`);
+    if (!o.clean && o.vis === 'visible') L.push('※画面表示中のまま記録が途絶えている → フリーズ/強制終了/クラッシュの可能性。直前の状態を以下に示す。');
+    else if (!o.clean) L.push('※バックグラウンド移行後に記録が途絶えた（iOSによる終了の可能性）。');
+    L.push('最後の15秒の推移: 秒 | 発音 steal | コード判定 | 描画落ち(回/最大ms) | HB遅延(回/最大ms) | 音飛び回数 | 入力遅れmax | 音声時計の累積遅れms');
+    for (const g of (o.seg || [])) L.push(`  ${g[0]} | ${g[1]} ${g[2]} | ${g[3]} | ${g[4]}/${g[5]} | ${g[6]}/${g[7]} | ${g[8]} | ${g[9]} | ${g[10]}`);
+    L.push('最後のイベント（保存時点の直近8秒・最大70件）:');
+    for (const r of (o.ev || [])) L.push('  ' + decode([r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]], 0));
+  }
+
   let tickId = null;
   window.frecStart = function () {
     if (window._frecOn) return;
@@ -406,6 +455,7 @@
     segs = [{ t: t0, label: '開始', snap: Object.assign({}, tot) }];
     window._frecOn = true;
     tickId = setInterval(tick, 20);
+    bbStart();
     buildMarkButton();
   };
   window.frecIsOn = () => window._frecOn;
@@ -416,8 +466,8 @@
   const rootName = r => (typeof OMNI_ROOT_DISPLAY !== 'undefined' && OMNI_ROOT_DISPLAY[r]) || ('r' + r);
   const f1 = x => x.toFixed(1), f2 = x => x.toFixed(2);
 
-  function decode(r) {
-    const ts = ((r[0] - t0) / 1000).toFixed(3);
+  function decode(r, base) {
+    const ts = ((r[0] - (base === undefined ? t0 : base)) / 1000).toFixed(3);
     const [, code, a, b, c, d, e, s1, s2] = r;
     switch (code) {
       case EV.CT_ADD:  return `${ts} 指${a} ボタン押下 ${rootName(b)}-${TYPE_COL[c]} (押下中=${d})`;
@@ -450,7 +500,7 @@
     L.push(`=== OMNITRO FLIGHT REPORT ===`);
     L.push(`BUILD ${window._omniBuild || '?'}  MODE ${low ? 'LOW POWER' : 'HIGH QUALITY'}  記録時間 ${((now - t0) / 1000).toFixed(1)}s`);
     if (typeof state !== 'undefined')
-      L.push(`現在の設定: RHYTHM=${state.isPlaying ? 'ON' : 'OFF'} CHORD_AUTO=${state.chordAuto ? 'ON' : 'OFF'} CHORD_HOLD=${state.chordHold ? 'ON' : 'OFF'}`);
+      L.push(`現在の設定: LIGHT=${document.body.classList.contains('fx-light') ? 'ON' : 'OFF'} RHYTHM=${state.isPlaying ? 'ON' : 'OFF'} CHORD_AUTO=${state.chordAuto ? 'ON' : 'OFF'} CHORD_HOLD=${state.chordHold ? 'ON' : 'OFF'}`);
     L.push(`MARK回数=${markCount}  AUDIO-CLOCK-STEP総数=${cnt[EV.ASTEP]}  FRAME-DROP総数=${cnt[EV.FDROP]}  HEARTBEAT-DROP総数=${cnt[EV.HBDROP]}  INPUT-LAG(>40ms)総数=${cnt[EV.LAG]}  TOUCHCANCEL総数=${cnt[EV.TCANCEL]}  雑音自動検出(波形)=${noiseCount}件(生フラグ${probe.flags})`);
     L.push('');
     L.push('--- 処理時間 (n=回数 avg/max ms) ---');
@@ -620,6 +670,7 @@
       L.push(decode(r));
       prevT = r[0];
     }
+    bbSection(L);
     return L.join('\n');
   };
 })();

@@ -2,8 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-window._omniBuild = 'v1.5.43';
-console.log('%c[omnitro] build: v1.5.43 — 軽量表示(VISUAL EFFECTS LIGHT)を既定に追加：GLOW OFF相当で描画負荷とノイズを低減', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.44';
+console.log('%c[omnitro] build: v1.5.44 — 診断：ブラックボックス記録（フリーズ調査）・ドラム初期化の例外修正（音声経路は変更なし）', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

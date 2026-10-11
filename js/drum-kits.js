@@ -248,6 +248,9 @@ function _lpAcquireGain(ctx, chain, now) {
 // 1発分: ソース（BufferSource）だけを新規生成し、常設チェーンの再利用可能な
 // エンベロープ用GainNodeへ接続する（通常時は新規ノード生成が1発あたり1個だけ）。
 function _lpDrumHit(ctx, activeBuf, p, lvl, time, ch) {
+  // exponentialRampToValueAtTime は値0以下だと RangeError（Chrome等）。キット読み込み時の無音ウォームアップ
+  // （gain=0）や LEVEL=0 の設定で例外になり、initDrums が途中で中断していた（v1.5.44で修正・音は変わらない）。
+  lvl = Math.max(0.0001, lvl);
   const chain = _lpDrumChain(ctx, ch, p);
   const now = ctx.currentTime;
   const slot = _lpAcquireGain(ctx, chain, now);
