@@ -340,7 +340,14 @@ function swapRhythmPatternLive(patternOverride) {
   rdbgStage('SWAP: 旧Sequence dispose 開始 (Tick内=' + (window._rdbgInTick ? 'yes' : 'no') + ')');
   oldLoop.dispose();
   rdbgStage('SWAP: 旧Sequence dispose 完了 → 新Sequence start()');
-  newLoop.start();
+  // ★v1.5.46 修正: start() を引数なしで呼ぶと、Toneは「Transport経過秒 × 現在のBPM」で
+  //   開始tickを換算する。テンポを途中で変えていると、この換算が実際のtickからずれ、
+  //   新Sequenceが未来のtickで開始されてしまい、その分（経過時間×テンポ変化量に比例して
+  //   数秒〜十数秒）リズムが無音になる。実際のtickを明示して開始すればこのずれは起きない。
+  //   テンポ不変の場合は従来とほぼ同じ値になるため、従来の挙動は変わらない。
+  const _swapTick = Tone.Transport.ticks;
+  rdbgStage('SWAP: 開始tick=' + _swapTick + ' (旧方式の換算tick=' + Math.round(Tone.Transport.seconds * Tone.Transport.bpm.value / 60 * Tone.Transport.PPQ) + ')');
+  newLoop.start(_swapTick + 'i');
   rdbgStage('SWAP: 新Sequence start() 完了 transport=' + Tone.Transport.seconds.toFixed(3) + 's state=' + Tone.Transport.state);
 
   console.log('[RHYTHM-DEBUG] swapRhythmPatternLive: Transportを止めずにパターンを差し替えました (recording=' + (typeof recState !== 'undefined' ? recState.active : 'unknown') + ', isPlaying=' + state.isPlaying + ')');
