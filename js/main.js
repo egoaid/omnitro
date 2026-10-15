@@ -2,8 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-window._omniBuild = 'v1.5.44';
-console.log('%c[omnitro] build: v1.5.44 — 診断：ブラックボックス記録（フリーズ調査）・ドラム初期化の例外修正（音声経路は変更なし）', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.45';
+console.log('%c[omnitro] build: v1.5.45 — RHYTHM DEBUG（デスクトップ・RANDOMフリーズ調査用の計測）。iPad用診断は削除。音声経路は変更なし', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();
@@ -26,7 +26,7 @@ setupArrangementUI();
 setupWakeLock();
 setupLayoutMode();
 setupAudioPerformance();
-setupPerfMonitor();
+setupRhythmDebug();
 
 // 起動時に最初のプリセットをロード（editorStateとselectを初期化）
 loadPatternByName('lofi01');

@@ -95,7 +95,7 @@ function _barTick(time) {
     _barWaiters = [];
     for (const w of waiters) {
       w.n--;
-      if (w.n <= 0) w.cb(time); else _barWaiters.push(w);
+      if (w.n <= 0) { rdbgStage('BAR境界: waiter発火'); w.cb(time); } else _barWaiters.push(w);
     }
   }
 }
@@ -107,11 +107,13 @@ function _barTick(time) {
 // 本当の小節境界）。すでに再生中のシーケンスに対して「次の小節の頭」を
 // 待ちたい場合は n=1 でよい。
 function waitBars(n, cb) {
+  rdbgStage('waitBars登録 n=' + n + ' 待機中=' + (_barWaiters.length + 1));
   _barWaiters.push({ n, cb });
 }
 
 // ── メインシーケンサー ──────────────────────────────────────────────────────────
 function startRhythm(patternOverride) {
+  rdbgStage('startRhythm 開始 bpm=' + state.tempo);
   if (rhythmLoop) { rhythmLoop.dispose(); }
 
   // ── パターン解決の優先順位 ───────────────────────────────────────────────
@@ -181,7 +183,7 @@ function startRhythm(patternOverride) {
   };
 
   // ── Sequence callback ─────────────────────────────────────────────────────
-  rhythmLoop = new Tone.Sequence((time, step) => {
+  rhythmLoop = new Tone.Sequence(rdbgWrapSeq((time, step) => {
     const si = step % steps;
     if (si === 0) {
       // 小節の頭に来た瞬間、waitBars() 経由の待機コールバック（RANDOM/HUMANIZE/
@@ -205,17 +207,19 @@ function startRhythm(patternOverride) {
         const vel = e.ghost ? Math.max(0.05, (e.vel || 0.5) * 0.4) : (e.vel || 0.5);
         const offsetSec = (e.offset || 0) / 1000;
         const t = Math.max(time, time + offsetSec);
-        triggers[ch](null, t, vel);
+        if (window._rdbgOn) { const _h0 = performance.now(); triggers[ch](null, t, vel); rdbgHit(ch, performance.now() - _h0); } else triggers[ch](null, t, vel);
       }
     }
 
     // ── グリッド点灯（UIスレッドに橋渡し） ──────────────────────────────────
     Tone.getDraw().schedule(() => {
-      gridHighlightStep(si);
+      if (window._rdbgOn) { const _g0 = performance.now(); gridHighlightStep(si); rdbgDraw(performance.now() - _g0); }
+      else gridHighlightStep(si);
     }, time);
 
-  }, [...Array(steps).keys()], '16n');
+  }, 'start'), [...Array(steps).keys()], '16n');
 
+  rdbgStage('startRhythm: Sequence構築完了 → start(0)');
   rhythmLoop.start(0);
   Tone.Transport.start();
 }
@@ -227,6 +231,7 @@ let prActiveStep = -1;
 let prDraw = () => {}; // placeholder — pianorollエンジン初期化後に上書き
 
 function stopRhythm() {
+  rdbgStage('stopRhythm');
   if (rhythmLoop) { rhythmLoop.stop(); }
   Tone.Transport.stop();
   prActiveStep = -1;
@@ -253,6 +258,7 @@ function stopRhythm() {
 // これにより、録音中に RHYTHM EDITOR で RANDOM や手動編集を行っても、
 // ピアノロールの見た目だけでなく実際の音にも即座に反映されるようになる。
 function swapRhythmPatternLive(patternOverride) {
+  rdbgStage('SWAP: 開始 (rhythmLoop=' + (rhythmLoop ? 'あり' : 'なし') + ')');
   if (!rhythmLoop) return; // まだ再生していない場合は何もしない（次回startRhythmで反映される）
 
   // startRhythm() と同じ理由で user__editor を優先する（詳細はそちらのコメント参照）
@@ -297,7 +303,7 @@ function swapRhythmPatternLive(patternOverride) {
     shkr:  (s, t, v) => { if (shkrSynth)  shkrSynth.trigger(t, v); },
   };
 
-  const newLoop = new Tone.Sequence((time, step) => {
+  const newLoop = new Tone.Sequence(rdbgWrapSeq((time, step) => {
     const si = step % steps;
     if (si === 0) {
       // startRhythm() 側と同じ理由（詳細はそちらのコメント参照）で、
@@ -315,22 +321,27 @@ function swapRhythmPatternLive(patternOverride) {
         const vel = e.ghost ? Math.max(0.05, (e.vel || 0.5) * 0.4) : (e.vel || 0.5);
         const offsetSec = (e.offset || 0) / 1000;
         const t = Math.max(time, time + offsetSec);
-        triggers[ch](null, t, vel);
+        if (window._rdbgOn) { const _h0 = performance.now(); triggers[ch](null, t, vel); rdbgHit(ch, performance.now() - _h0); } else triggers[ch](null, t, vel);
       }
     }
 
     Tone.getDraw().schedule(() => {
-      gridHighlightStep(si);
+      if (window._rdbgOn) { const _g0 = performance.now(); gridHighlightStep(si); rdbgDraw(performance.now() - _g0); }
+      else gridHighlightStep(si);
     }, time);
 
-  }, [...Array(steps).keys()], '16n');
+  }, 'swap'), [...Array(steps).keys()], '16n');
+  rdbgStage('SWAP: 新Sequence構築完了');
 
   // 古いSequenceを先に破棄してから新しいものを開始する。
   // Tone.Transport.start()/stop() は一切呼ばない。
   const oldLoop = rhythmLoop;
   rhythmLoop = newLoop;
+  rdbgStage('SWAP: 旧Sequence dispose 開始 (Tick内=' + (window._rdbgInTick ? 'yes' : 'no') + ')');
   oldLoop.dispose();
+  rdbgStage('SWAP: 旧Sequence dispose 完了 → 新Sequence start()');
   newLoop.start();
+  rdbgStage('SWAP: 新Sequence start() 完了 transport=' + Tone.Transport.seconds.toFixed(3) + 's state=' + Tone.Transport.state);
 
   console.log('[RHYTHM-DEBUG] swapRhythmPatternLive: Transportを止めずにパターンを差し替えました (recording=' + (typeof recState !== 'undefined' ? recState.active : 'unknown') + ', isPlaying=' + state.isPlaying + ')');
 }

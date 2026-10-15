@@ -110,6 +110,8 @@ function prXToStepOffset(canvasX) {
 //   clap:       ±10ms (少し遅れ気味が自然)
 //   tamb/shkr:  ±18ms (タンバリン・シェイカーは揺れが大きい)
 function applyHumanize() {
+  rdbgIntensive(10000);
+  rdbgStage('HUMANIZE click bpm=' + state.tempo + ' playing=' + state.isPlaying);
   const CH_HUMANIZE_MS = {
     kick: 8, snare: 8, hat: 14, hiop: 14,
     rim: 12, cowbl: 12, clap: 10, tamb: 18, shkr: 18,
@@ -608,6 +610,7 @@ function prSetupEvents() {
 
 // ── リアルタイム反映: 再生中でも即座に適用 ───────────────────────────────────
 function applyEditorPatternRT() {
+  rdbgStage('applyEditorPatternRT (即時反映: stop→start) playing=' + state.isPlaying);
   const pat = editorToPattern();
   RHYTHM_PATTERNS['user__editor'] = pat;
   if (state.isPlaying && !recState.active) {
@@ -631,6 +634,7 @@ function applyEditorPatternRT() {
 // Tone.Transportには一切触れない（録音中・非録音中どちらでも安全）。
 let _randomizePendingCount = 0;
 function applyEditorPatternRTDeferred() {
+  rdbgStage('applyEditorPatternRTDeferred playing=' + state.isPlaying + ' bpm=' + state.tempo);
   const pat = editorToPattern();
   RHYTHM_PATTERNS['user__editor'] = pat;
   if (!state.isPlaying) return; // 再生していなければ何もしない（次回再生時に反映される）
@@ -645,6 +649,7 @@ function applyEditorPatternRTDeferred() {
 
   // 今鳴っている小節が終わるのを待ってから切り替える
   waitBars(1, () => {
+    rdbgStage('DEFER: 小節境界に到達 → swap実行');
     // 待っている間にさらに別の編集が行われている可能性があるため、
     // 切り替え直前に user__editor の最新内容を取り直す
     swapRhythmPatternLive(RHYTHM_PATTERNS['user__editor']);
@@ -781,6 +786,8 @@ function syncUserPatternsToSelect() {
 // 確率・ベロシティ・マイクロオフセットにバラつきを加えた
 // 人間的なパターンを生成する。
 function randomizeEditorPattern() {
+  rdbgIntensive(10000);
+  rdbgStage('RANDOM click bpm=' + state.tempo + ' playing=' + state.isPlaying + ' perf=' + state.audioPerformanceMode);
   for (const ch of GROOVE_CHANNELS) editorState[ch] = [];
 
   const style = ['chill','hiphop','minimal'][Math.floor(Math.random() * 3)];
@@ -939,8 +946,11 @@ function randomizeEditorPattern() {
   if (swingEl) swingEl.value = editorState.swing;
   if (swingValEl) swingValEl.textContent = editorState.swing + '%';
 
+  rdbgStage('RANDOM 生成完了: ' + GROOVE_CHANNELS.map(c => c + '=' + editorState[c].length).join(' '));
   prDrawImpl();
+  rdbgStage('RANDOM 描画完了');
   applyEditorPatternRTDeferred();
+  rdbgStage('RANDOM 処理完了（以降は小節境界待ち）');
 }
 
 // ── エディターを開く/閉じる ────────────────────────────────────────────────
