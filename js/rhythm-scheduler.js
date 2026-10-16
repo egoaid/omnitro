@@ -95,7 +95,7 @@ function _barTick(time) {
     _barWaiters = [];
     for (const w of waiters) {
       w.n--;
-      if (w.n <= 0) { rdbgStage('BAR境界: waiter発火'); w.cb(time); } else _barWaiters.push(w);
+      if (w.n <= 0) w.cb(time); else _barWaiters.push(w);
     }
   }
 }
@@ -107,7 +107,6 @@ function _barTick(time) {
 // 本当の小節境界）。すでに再生中のシーケンスに対して「次の小節の頭」を
 // 待ちたい場合は n=1 でよい。
 function waitBars(n, cb) {
-  rdbgStage('waitBars登録 n=' + n + ' 待機中=' + (_barWaiters.length + 1));
   _barWaiters.push({ n, cb });
 }
 
@@ -117,7 +116,6 @@ function waitBars(n, cb) {
 let rhythmHolder = null;
 
 function startRhythm(patternOverride) {
-  rdbgStage('startRhythm 開始 bpm=' + state.tempo);
   if (rhythmLoop) { rhythmLoop.dispose(); }
 
   // ── パターン解決の優先順位 ───────────────────────────────────────────────
@@ -189,7 +187,7 @@ function startRhythm(patternOverride) {
   };
 
   // ── Sequence callback ─────────────────────────────────────────────────────
-  rhythmLoop = new Tone.Sequence(rdbgWrapSeq((time, step) => {
+  rhythmLoop = new Tone.Sequence((time, step) => {
     const si = step % steps;
     if (si === 0) {
       // 小節の頭に来た瞬間、waitBars() 経由の待機コールバック（RANDOM/HUMANIZE/
@@ -213,19 +211,17 @@ function startRhythm(patternOverride) {
         const vel = e.ghost ? Math.max(0.05, (e.vel || 0.5) * 0.4) : (e.vel || 0.5);
         const offsetSec = (e.offset || 0) / 1000;
         const t = Math.max(time, time + offsetSec);
-        if (window._rdbgOn) { const _h0 = performance.now(); triggers[ch](null, t, vel); rdbgHit(ch, performance.now() - _h0); } else triggers[ch](null, t, vel);
+        triggers[ch](null, t, vel);
       }
     }
 
     // ── グリッド点灯（UIスレッドに橋渡し） ──────────────────────────────────
     Tone.getDraw().schedule(() => {
-      if (window._rdbgOn) { const _g0 = performance.now(); gridHighlightStep(si); rdbgDraw(performance.now() - _g0); }
-      else gridHighlightStep(si);
+      gridHighlightStep(si);
     }, time);
 
-  }, 'start'), [...Array(steps).keys()], '16n');
+  }, [...Array(steps).keys()], '16n');
 
-  rdbgStage('startRhythm: Sequence構築完了 → start(0)');
   rhythmLoop.start(0);
   Tone.Transport.start();
 }
@@ -237,7 +233,6 @@ let prActiveStep = -1;
 let prDraw = () => {}; // placeholder — pianorollエンジン初期化後に上書き
 
 function stopRhythm() {
-  rdbgStage('stopRhythm');
   if (rhythmLoop) { rhythmLoop.stop(); }
   Tone.Transport.stop();
   prActiveStep = -1;
@@ -264,7 +259,6 @@ function stopRhythm() {
 // これにより、録音中に RHYTHM EDITOR で RANDOM や手動編集を行っても、
 // ピアノロールの見た目だけでなく実際の音にも即座に反映されるようになる。
 function swapRhythmPatternLive(patternOverride) {
-  rdbgStage('SWAP: 開始 (rhythmLoop=' + (rhythmLoop ? 'あり' : 'なし') + ')');
   if (!rhythmLoop) return; // まだ再生していない場合は何もしない（次回startRhythmで反映される）
 
   // startRhythm() と同じ理由で user__editor を優先する（詳細はそちらのコメント参照）
@@ -300,12 +294,11 @@ function swapRhythmPatternLive(patternOverride) {
   // ★v1.5.47: 同じステップ数なら、Sequenceを作り直さず索引だけを入れ替える。
   //   従来は新Sequenceを start() していたため、新ステップ0が「旧ステップ0の予定時刻」ではなく
   //   Toneの先読み窓の端（最大 updateInterval≒50ms 後）で鳴り、差し替えのたびに
-  //   グリッドが 6〜56ms 遅れていた（v1.5.47のログで計測）。
+  //   グリッドが 6〜56ms 遅れていた（実機ログで計測）。
   //   ここは小節頭(ステップ0)のコールバック冒頭から呼ばれるので、この後そのまま
   //   ステップ0が新パターンで「正しい時刻」に鳴る。dispose/start も不要になる。
   if (rhythmHolder && rhythmHolder.steps === steps) {
     rhythmHolder.idx = idx;
-    rdbgStage('SWAP: 同一Sequenceのまま索引のみ差し替え（Sequence再構築なし・時刻ずれなし）');
     return;
   }
 
@@ -324,7 +317,7 @@ function swapRhythmPatternLive(patternOverride) {
     shkr:  (s, t, v) => { if (shkrSynth)  shkrSynth.trigger(t, v); },
   };
 
-  const newLoop = new Tone.Sequence(rdbgWrapSeq((time, step) => {
+  const newLoop = new Tone.Sequence((time, step) => {
     const si = step % steps;
     if (si === 0) {
       // startRhythm() 側と同じ理由（詳細はそちらのコメント参照）で、
@@ -342,34 +335,27 @@ function swapRhythmPatternLive(patternOverride) {
         const vel = e.ghost ? Math.max(0.05, (e.vel || 0.5) * 0.4) : (e.vel || 0.5);
         const offsetSec = (e.offset || 0) / 1000;
         const t = Math.max(time, time + offsetSec);
-        if (window._rdbgOn) { const _h0 = performance.now(); triggers[ch](null, t, vel); rdbgHit(ch, performance.now() - _h0); } else triggers[ch](null, t, vel);
+        triggers[ch](null, t, vel);
       }
     }
 
     Tone.getDraw().schedule(() => {
-      if (window._rdbgOn) { const _g0 = performance.now(); gridHighlightStep(si); rdbgDraw(performance.now() - _g0); }
-      else gridHighlightStep(si);
+      gridHighlightStep(si);
     }, time);
 
-  }, 'swap'), [...Array(steps).keys()], '16n');
-  rdbgStage('SWAP: 新Sequence構築完了');
+  }, [...Array(steps).keys()], '16n');
 
   // 古いSequenceを先に破棄してから新しいものを開始する。
   // Tone.Transport.start()/stop() は一切呼ばない。
   const oldLoop = rhythmLoop;
   rhythmLoop = newLoop;
-  rdbgStage('SWAP: 旧Sequence dispose 開始 (Tick内=' + (window._rdbgInTick ? 'yes' : 'no') + ')');
   oldLoop.dispose();
-  rdbgStage('SWAP: 旧Sequence dispose 完了 → 新Sequence start()');
   // ★v1.5.47 修正: start() を引数なしで呼ぶと、Toneは「Transport経過秒 × 現在のBPM」で
   //   開始tickを換算する。テンポを途中で変えていると、この換算が実際のtickからずれ、
   //   新Sequenceが未来のtickで開始されてしまい、その分（経過時間×テンポ変化量に比例して
   //   数秒〜十数秒）リズムが無音になる。実際のtickを明示して開始すればこのずれは起きない。
   //   テンポ不変の場合は従来とほぼ同じ値になるため、従来の挙動は変わらない。
-  const _swapTick = Tone.Transport.ticks;
-  rdbgStage('SWAP: 開始tick=' + _swapTick + ' (旧方式の換算tick=' + Math.round(Tone.Transport.seconds * Tone.Transport.bpm.value / 60 * Tone.Transport.PPQ) + ')');
-  newLoop.start(_swapTick + 'i');
-  rdbgStage('SWAP: 新Sequence start() 完了 transport=' + Tone.Transport.seconds.toFixed(3) + 's state=' + Tone.Transport.state);
+  newLoop.start(Tone.Transport.ticks + 'i');
 
   console.log('[RHYTHM-DEBUG] swapRhythmPatternLive: Transportを止めずにパターンを差し替えました (recording=' + (typeof recState !== 'undefined' ? recState.active : 'unknown') + ', isPlaying=' + state.isPlaying + ')');
 }

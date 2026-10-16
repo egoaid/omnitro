@@ -6,7 +6,7 @@
 // v1.4-modular: index.html を css/*.css・js/*.js に分割したビルドに対応。
 // CACHE_NAME を旧バージョンから変更したことで、旧バージョンをインストール済みの
 // クライアントでも古いキャッシュが破棄され、新しいファイル一式が確実に取得される。
-const CACHE_NAME = 'omnitro-cache-v47-1.5.47';
+const CACHE_NAME = 'omnitro-cache-1.5.48';
 
 // 初回アクセス時にキャッシュしておく「アプリの殻」。
 // index.html・css/・js/ 配下にファイルを追加/削除/リネームした場合はここも合わせて変更してください。
@@ -20,41 +20,42 @@ const APP_SHELL = [
   './icons/favicon-32.png',
   './omnitro-capture-worklet.js',
 
-  './css/variables.css?v47',
-  './css/layout.css?v47',
-  './css/chord-strum.css?v47',
-  './css/overlays.css?v47',
-  './css/layout-modes.css?v47',
+  './css/variables.css?v48',
+  './css/layout.css?v48',
+  './css/chord-strum.css?v48',
+  './css/overlays.css?v48',
+  './css/layout-modes.css?v48',
 
-  './js/state.js?v47',
-  './js/layout-mode.js?v47',
-  './js/audio-performance.js?v47',
-  './js/rhythm-debug.js?v47',
-  './js/music-theory.js?v47',
-  './js/audio-core.js?v47',
-  './js/native-strum-synth.js?v47',
-  './js/voice-defs.js?v47',
-  './js/rhythm-patterns.js?v47',
-  './js/drum-synth-lm1.js?v47',
-  './js/drum-kits.js?v47',
-  './js/rhythm-scheduler.js?v47',
-  './js/chord-playback.js?v47',
-  './js/strumplate-core.js?v47',
-  './js/chord-ui.js?v47',
-  './js/strumplate-ui.js?v47',
-  './js/settings-ui.js?v47',
-  './js/rhythm-ui.js?v47',
-  './js/rhythm-editor.js?v47',
-  './js/piano-roll.js?v47',
-  './js/recording.js?v47',
-  './js/mix-studio.js?v47',
-  './js/kit-editor.js?v47',
-  './js/midi.js?v47',
-  './js/manual-content.js?v47',
-  './js/manual-ui.js?v47',
-  './js/arrangement.js?v47',
-  './js/wake-lock.js?v47',
-  './js/main.js?v47',
+  './js/version.js?v48',
+  './js/state.js?v48',
+  './js/layout-mode.js?v48',
+  './js/audio-performance.js?v48',
+  './js/music-theory.js?v48',
+  './js/audio-core.js?v48',
+  './js/native-strum-synth.js?v48',
+  './js/voice-defs.js?v48',
+  './js/rhythm-patterns.js?v48',
+  './js/drum-synth-lm1.js?v48',
+  './js/drum-kits.js?v48',
+  './js/rhythm-scheduler.js?v48',
+  './js/chord-playback.js?v48',
+  './js/strumplate-core.js?v48',
+  './js/chord-ui.js?v48',
+  './js/strumplate-ui.js?v48',
+  './js/settings-ui.js?v48',
+  './js/rhythm-ui.js?v48',
+  './js/rhythm-editor.js?v48',
+  './js/piano-roll.js?v48',
+  './js/recording.js?v48',
+  './js/mix-studio.js?v48',
+  './js/kit-editor.js?v48',
+  './js/midi.js?v48',
+  './js/manual-content.js?v48',
+  './js/manual-ui.js?v48',
+  './js/arrangement.js?v48',
+  './js/wake-lock.js?v48',
+  './js/update-check.js?v48',
+  './js/main.js?v48',
 
   'https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js',
 ];
@@ -80,6 +81,10 @@ self.addEventListener('activate', (event) => {
 // キャッシュ優先、無ければネットワーク取得しつつキャッシュに追加（stale-while-revalidate的な簡易実装）
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  // version.json はアップデート確認用。Service Workerを素通しして常にネットワークから取得する
+  // （キャッシュした古い値を返すと、新しいバージョンを検出できなくなる）。
+  if (new URL(event.request.url).pathname.endsWith('/version.json')) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

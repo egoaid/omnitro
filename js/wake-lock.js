@@ -16,22 +16,25 @@
 let _wakeLockSentinel = null;
 let _wakeLockDesired = false;
 
+// 戻り値: 現在ロックを保持していれば true
 async function requestWakeLock() {
-  if (!('wakeLock' in navigator)) return; // 非対応ブラウザ
-  if (_wakeLockSentinel) return; // 既に取得済み
+  if (!('wakeLock' in navigator)) return false; // 非対応ブラウザ
+  if (_wakeLockSentinel) return true; // 既に取得済み
 
   try {
     _wakeLockSentinel = await navigator.wakeLock.request('screen');
     console.log('[WAKE LOCK] 画面の自動スリープを抑制しました');
     _wakeLockSentinel.addEventListener('release', () => {
       // タブが非表示になった場合など、ブラウザ側で自動解除された時に発火。
-      // ここでは何もしない（再表示時に visibilitychange ハンドラが再取得を試みる）。
+      // 再表示時に visibilitychange ハンドラが再取得を試みる。
       _wakeLockSentinel = null;
     });
+    return true;
   } catch (e) {
     // 非HTTPS環境・タブが非表示中の要求など。演奏自体には影響しないので
     // エラーダイアログ等は出さず、コンソールログのみに留める。
     console.log('[WAKE LOCK] 取得できませんでした（' + e.name + ': ' + e.message + '）');
+    return false;
   }
 }
 
@@ -53,15 +56,21 @@ function setupWakeLock() {
     return;
   }
 
+  // 取得に成功するまでは、次のタップ/キー入力でも再試行する（初回の要求が
+  // 低電力状態などで拒否されても、次の操作で取得できるように）。
   let armed = false;
-  const arm = () => {
+  const arm = async () => {
     if (armed) return;
     armed = true;
     _wakeLockDesired = true;
-    requestWakeLock();
-    document.removeEventListener('pointerdown', arm);
-    document.removeEventListener('touchstart', arm);
-    document.removeEventListener('keydown', arm);
+    const ok = await requestWakeLock();
+    if (ok) {
+      document.removeEventListener('pointerdown', arm);
+      document.removeEventListener('touchstart', arm);
+      document.removeEventListener('keydown', arm);
+    } else {
+      armed = false;
+    }
   };
   document.addEventListener('pointerdown', arm, { passive: true });
   document.addEventListener('touchstart', arm, { passive: true });

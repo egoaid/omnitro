@@ -335,6 +335,8 @@ const MANUAL_SECTIONS = [
         <li><b>MICROPHONE</b> — マイク録音・モニター・入力レベル</li>
         <li><b>REAL TIME CONTROL</b> — CHORD MANUAL/AUTO、CHORD HOLD、MIDI STRUM MODEのON/OFF</li>
         <li><b>ARRANGEMENT</b> — INTRO / FILL / ENDINGのON/OFF（詳細は「INTRO / FILL / ENDING」の章を参照）</li>
+        <li><b>DISPLAY / AUDIO PERFORMANCE / LAYOUT MODE</b> — 表示の軽量化、音質と負荷のバランス、画面レイアウトの選択（詳細は「表示とパフォーマンス」の章を参照）</li>
+        <li><b>HELP</b> — このマニュアルを開く、更新を確認する（詳細は「アップデート」の章を参照）</li>
       </ul>`,
     bodyEn: `
       <ul>
@@ -346,7 +348,112 @@ const MANUAL_SECTIONS = [
         <li><b>MICROPHONE</b> — mic recording, monitoring and input level</li>
         <li><b>REAL TIME CONTROL</b> — CHORD MANUAL/AUTO, CHORD HOLD, and MIDI STRUM MODE on/off</li>
         <li><b>ARRANGEMENT</b> — INTRO / FILL / ENDING on/off (see the "Intro / Fill / Ending" chapter for details)</li>
+        <li><b>DISPLAY / AUDIO PERFORMANCE / LAYOUT MODE</b> — lighter visuals, the sound-quality / processing-load trade-off, and the screen layout (see the "Display & Performance" chapter)</li>
+        <li><b>HELP</b> — open this manual and check for updates (see the "Updates" chapter)</li>
       </ul>`,
+  },
+  {
+    titleJa: '表示とパフォーマンス', titleEn: 'Display & Performance',
+    bodyJa: `
+      <p>SETTINGSの「DISPLAY」「AUDIO PERFORMANCE」「LAYOUT MODE」で、お使いの端末の処理能力や画面の大きさに合わせて動作を調整できます。</p>
+      <h3>VISUAL EFFECTS LIGHT (LIGHTWEIGHT DISPLAY)</h3>
+      <p>ONにすると、影・光彩・アニメーション・画面遷移の効果を省いて描画の負荷を下げます
+      （押したボタンの色の変化など、演奏に必要な表示はそのまま維持されます）。既定はONです。
+      処理能力の低い端末で演奏中にノイズが出る場合は、ONのままにしてください。
+      余裕のある端末で見た目を優先したい場合は、OFFにすると光や影の演出が表示されます。</p>
+      <h3>AUDIO PERFORMANCE</h3>
+      <ul>
+        <li><b>HIGH QUALITY</b> — 通常の音質です。最新のタブレットやパソコンなど、処理に余裕のある端末ではこのままで問題ありません。</li>
+        <li><b>LOW POWER MODE</b> — 処理能力の低い端末で、ストラムプレート演奏時にノイズや音切れが出る場合に選んでください。
+          同時発音数を抑え、サブレイヤー（重ね音）を省略して負荷を下げます（音は簡略化されます）。
+          あわせて、ストラムプレートの同時タッチは1本指に制限され、発音時の光る演出やドラムの一部エフェクト（ROOM）も省略されます。</li>
+      </ul>
+      <p>選んだ内容はこの端末のブラウザに保存されます。</p>
+      <h3>LAYOUT MODE</h3>
+      <ul>
+        <li><b>STANDARD</b> — スマートフォン向けの縦画面レイアウト（既定）</li>
+        <li><b>TABLET LANDSCAPE</b> — タブレットを横向きに持って弾くための、横長画面向けレイアウト</li>
+        <li><b>DESKTOP FULLSCREEN</b> — パソコン向け。画面全体を使い、SETTINGS・RHYTHM EDITOR・KIT EDITOR・MIX STUDIOなどを1画面に並べて表示します</li>
+      </ul>
+      <p>レイアウトは自動判定されず、ここで選んだものが常に使われます。選択はこの端末のブラウザに保存されます。</p>
+      <h3>画面スリープの抑制</h3>
+      <p>アプリを操作し始めると、Screen Wake Lock APIにより画面の自動スリープを抑制します
+      （対応ブラウザ・HTTPS環境のみ）。別のタブやアプリに切り替えると一時的に解除され、戻ると再び有効になります。
+      設定項目はありません。</p>`,
+    bodyEn: `
+      <p>Under "DISPLAY", "AUDIO PERFORMANCE" and "LAYOUT MODE" in Settings you can tune how the app runs to suit your device's processing power and screen size.</p>
+      <h3>VISUAL EFFECTS LIGHT (LIGHTWEIGHT DISPLAY)</h3>
+      <p>When on, shadows, glows, animations and transitions are skipped to reduce the drawing load
+      (essentials such as the color change of a pressed button are kept). It is on by default.
+      If you hear noise while playing on a device with limited processing power, leave it on.
+      On a device with headroom you can turn it off to see the glow and shadow effects.</p>
+      <h3>AUDIO PERFORMANCE</h3>
+      <ul>
+        <li><b>HIGH QUALITY</b> — the normal sound quality. On recent tablets and computers with plenty of headroom, this is the right choice.</li>
+        <li><b>LOW POWER MODE</b> — choose this if you hear noise or dropouts while playing the strumplate on a device with limited processing power.
+          It reduces the number of simultaneous voices and omits the sub layer (the layered sound) to lower the load (the sound is simplified).
+          It also limits the strumplate to one finger at a time, and skips the note-flash visuals and part of the drum effects (ROOM).</li>
+      </ul>
+      <p>Your choice is saved in this device's browser.</p>
+      <h3>LAYOUT MODE</h3>
+      <ul>
+        <li><b>STANDARD</b> — the portrait layout designed for smartphones (default)</li>
+        <li><b>TABLET LANDSCAPE</b> — a wide layout for playing with a tablet held in landscape</li>
+        <li><b>DESKTOP FULLSCREEN</b> — for computers. Uses the whole screen and shows Settings, Rhythm Editor, Kit Editor, Mix Studio and more side by side on one screen</li>
+      </ul>
+      <p>The layout is never chosen automatically — whatever you pick here is always used. Your choice is saved in this device's browser.</p>
+      <h3>Keeping the screen awake</h3>
+      <p>Once you start using the app, the Screen Wake Lock API keeps the screen from auto-locking
+      (supported browsers over HTTPS only). It is released while you are in another tab or app and re-acquired when you come back.
+      There is no setting for it.</p>`,
+  },
+  {
+    titleJa: 'アップデート', titleEn: 'Updates',
+    bodyJa: `
+      <p>SETTINGS最下部に、お使いのバージョンが表示されます。アプリは起動時・一定時間ごと・画面に戻った時に、
+      サーバー上の最新バージョンと自動で比較します。</p>
+      <ul>
+        <li>新しいバージョンがある場合、画面上部に <b>NEW VERSION … AVAILABLE — TAP TO UPDATE</b> の帯が表示されます。
+          タップすると、保存されているアプリのキャッシュを削除して再読み込みし、最新版に更新します。右端の ✕ で一時的に閉じられます。</li>
+        <li>SETTINGS → HELP の <b>CHECK FOR UPDATES</b> で、いつでも手動で確認できます。</li>
+        <li>ユーザーパターン・ユーザーキット・各種設定は、キャッシュとは別の場所（ブラウザのlocalStorage）に保存されているため、更新しても消えません。</li>
+        <li>録音中、および録音データが残っているMIX STUDIOの表示中は、録音データが失われるため更新できません。書き出すか破棄してから更新してください。</li>
+        <li>オフラインのときは確認されず、そのまま使い続けられます。</li>
+      </ul>`,
+    bodyEn: `
+      <p>Your current version is shown at the bottom of Settings. The app automatically compares it with the latest version on the server at startup, at regular intervals, and when you return to the screen.</p>
+      <ul>
+        <li>If a newer version exists, a <b>NEW VERSION … AVAILABLE — TAP TO UPDATE</b> bar appears at the top of the screen.
+          Tapping it clears the app's stored cache and reloads, updating you to the latest version. The ✕ on the right dismisses it for now.</li>
+        <li>You can also check at any time with <b>CHECK FOR UPDATES</b> under Settings → HELP.</li>
+        <li>User patterns, user kits and your settings are stored separately from the cache (in the browser's localStorage), so updating does not erase them.</li>
+        <li>Updating is not possible while recording, or while Mix Studio is open with a recording in it, because the recording would be lost. Export or discard it first.</li>
+        <li>While offline the check is skipped and you can keep using the app as usual.</li>
+      </ul>`,
+  },
+  {
+    titleJa: 'クレジットとライセンス', titleEn: 'Credits & Licenses',
+    bodyJa: `
+      <p>omnitro本体（コード・音色・素材）の著作権は作者に帰属し、独自ライセンス（All Rights Reserved）です。
+      本アプリを使って制作した楽曲などの成果物の商用利用は自由です（詳細は「仕様」のライセンス欄、およびGitHubのLICENSEを参照）。</p>
+      <p>本アプリは、以下のオープンなライセンスの部品を改変せずに利用しています。これらは各ライセンスのもとで提供されており、
+      omnitro本体のライセンスの対象ではありません。</p>
+      <ul>
+        <li><b>Tone.js</b> v14.8.49 — MIT License, © 2014-2020 Yotam Mann（内部に standardized-audio-context［MIT, © Christoph Guttandin］と tslib［0BSD, © Microsoft Corp.］を含む）</li>
+        <li><b>Orbitron</b> / <b>Share Tech Mono</b>（Google Fonts） — SIL Open Font License 1.1</li>
+      </ul>
+      <p>ライセンス全文は、GitHubリポジトリの <b>THIRD-PARTY-NOTICES.md</b> を参照してください。
+      本アプリのボイス・ドラム音はすべて実行時にコードで合成しており、第三者の音声サンプルは使用していません。</p>`,
+    bodyEn: `
+      <p>The copyright of omnitro itself (code, voices and assets) belongs to the author, under a custom license (All Rights Reserved).
+      Songs and other works you create with the app may be used commercially (see the License row under "Specifications" and the LICENSE file on GitHub).</p>
+      <p>The app uses the following openly licensed components, unmodified. They remain under their own licenses and are not covered by omnitro's own license.</p>
+      <ul>
+        <li><b>Tone.js</b> v14.8.49 — MIT License, © 2014-2020 Yotam Mann (includes standardized-audio-context [MIT, © Christoph Guttandin] and tslib [0BSD, © Microsoft Corp.])</li>
+        <li><b>Orbitron</b> / <b>Share Tech Mono</b> (Google Fonts) — SIL Open Font License 1.1</li>
+      </ul>
+      <p>For the full license texts, see <b>THIRD-PARTY-NOTICES.md</b> in the GitHub repository.
+      All voices and drum sounds in the app are synthesized in code at runtime; no third-party audio samples are used.</p>`,
   },
   {
     titleJa: '仕様', titleEn: 'Specifications',
@@ -366,7 +473,8 @@ const MANUAL_SECTIONS = [
         <tr><td>書き出し形式</td><td>WAV（16bit PCM）。MIX / VOCAL / omni / drum を個別に書き出し可能</td></tr>
         <tr><td>MIX STUDIOエフェクト</td><td>HPF、OTT（マルチバンド）、DE-ESS、GLUE COMP、BUS REVERB、LIMITER、4種プリセット</td></tr>
         <tr><td>画面スリープ抑制</td><td>Screen Wake Lock API対応。アプリを操作すると画面の自動スリープを抑制する（対応ブラウザ・HTTPS環境のみ）</td></tr>
-        <tr><td>オーディオエンジン</td><td>Web Audio API（ネイティブ） + Tone.js v14.8.49</td></tr>
+        <tr><td>アップデート</td><td>起動時・定期的・画面復帰時にサーバーの最新バージョンと自動比較。新版があれば更新を促す帯を表示し、タップでキャッシュを削除して再読み込み</td></tr>
+        <tr><td>オーディオエンジン</td><td>Web Audio API（ネイティブ） + Tone.js v14.8.49（MIT License）</td></tr>
         <tr><td>データ保存</td><td>ユーザーパターン／キットはブラウザのlocalStorageに保存（端末・ブラウザ単位）</td></tr>
         <tr><td>推奨環境</td><td>Google Chrome（デスクトップ／モバイル）</td></tr>
         <tr><td>ライセンス</td><td>独自ライセンス。アプリ本体の複製・改変・再配布・販売、音色のサンプリング配布・販売は非営利でも禁止。制作した楽曲などの成果物の商用利用は自由</td></tr>
@@ -387,7 +495,8 @@ const MANUAL_SECTIONS = [
         <tr><td>Export format</td><td>WAV (16-bit PCM); MIX / VOCAL / omni / drum can each be exported individually</td></tr>
         <tr><td>Mix Studio effects</td><td>HPF, OTT (multiband dynamics), DE-ESS, GLUE COMP, BUS REVERB, LIMITER, 4 presets</td></tr>
         <tr><td>Screen sleep prevention</td><td>Uses the Screen Wake Lock API to keep the screen from auto-locking while you're using the app (supported browsers over HTTPS only)</td></tr>
-        <tr><td>Audio engine</td><td>Native Web Audio API + Tone.js v14.8.49</td></tr>
+        <tr><td>Updates</td><td>Automatically compares with the latest version on the server at startup, periodically and when you return to the screen. If a newer version exists, an update bar appears; tapping it clears the cache and reloads</td></tr>
+        <tr><td>Audio engine</td><td>Native Web Audio API + Tone.js v14.8.49 (MIT License)</td></tr>
         <tr><td>Data storage</td><td>User patterns/kits are saved in the browser's localStorage (per device/browser)</td></tr>
         <tr><td>Recommended browser</td><td>Google Chrome (desktop or mobile)</td></tr>
         <tr><td>License</td><td>Custom license. Copying, modifying, redistributing or selling the app itself, and distributing/selling sampled voices, are prohibited even non-commercially. Commercial use of songs/works you create with it is permitted</td></tr>

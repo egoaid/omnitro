@@ -520,7 +520,6 @@ function initDrums(kitName) {
       lastNode.connect(roomComp);
       lastNode = roomComp;
     } else if (roomAmt > 0.01) {
-      const _cv0 = window._rdbgOn ? performance.now() : 0; // 計測のみ
       // ルームIR: 短いランダムノイズ (10〜80ms)
       const roomMs  = 10 + roomAmt * 70;
       const roomLen = Math.floor(ctx.sampleRate * roomMs / 1000);
@@ -539,7 +538,6 @@ function initDrums(kitName) {
       dryG.connect(roomOut);
       wetG.connect(roomOut);
       lastNode = roomOut;
-      if (_cv0) rdbgCount('conv', performance.now() - _cv0);
     }
 
     // ── PAN ─────────────────────────────────────────────────────────────────

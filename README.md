@@ -15,6 +15,9 @@
 - [使い方](#使い方)
 - [既知の制限](#既知の制限)
 - [PWAとしてインストール](#pwaとしてインストール)
+- [アップデート](#アップデート)
+- [ファイル構成](#ファイル構成)
+- [技術スタックとサードパーティ](#技術スタックとサードパーティ)
 - [ライセンス](#ライセンス)
 - [Features (English)](#features-english)
 - [License (English)](#license-english)
@@ -32,6 +35,8 @@
 - **PCキーボード演奏** — マウス操作に加え、キーボードでもコードボタンを演奏可能。ライブ演奏中に便利なショートカットも用意しています（<kbd>Space</kbd>：RHYTHM開始/停止、<kbd>B</kbd>：FILL発動、<kbd>C</kbd>：RANDOM発動）
 - **MIDI対応** — MIDIキーボードでの演奏に対応。「MIDI STRUM MODE」ONで、鍵盤演奏を現在選択中のコードの音だけに強制マッピングし、ストラムプレートをそのまま鍵盤で弾けます（※Safari／iPhone・iPadは非対応。後述）
 - **PWA対応** — ホーム画面に追加してアプリのように利用可能（オフライン対応）
+- **自動アップデート通知** — 新しいバージョンが公開されると画面上部にお知らせが出て、タップするだけで最新版に更新（保存したパターン／キットは消えません）
+- **画面スリープ抑制** — 演奏中に画面が自動で暗くならないよう Screen Wake Lock API を利用（対応ブラウザのみ）
 - **画面スリープ抑制** — 演奏中にスマートフォンの画面が自動でスリープしないよう抑制します（対応ブラウザのみ）
 - **日本語 / English** — アプリ内マニュアルは日英切り替え対応
 
@@ -62,6 +67,50 @@
 - **iOS Safari**: 共有ボタン →「ホーム画面に追加」
 
 一度読み込めば、オフラインでも起動できます。
+
+---
+
+## アップデート
+
+- アプリは起動時・一定時間ごと・画面に戻った時に、サーバー上の `version.json` と自分のバージョンを比較します。新しい版があれば画面上部に更新を促す帯が表示され、タップするとアプリのキャッシュを削除して再読み込みし、最新版になります。
+- SETTINGS → HELP → **CHECK FOR UPDATES** で手動確認もできます。
+- ユーザーパターン／キット／設定は `localStorage` に保存されているため、更新しても消えません。録音中・録音データが残っている MIX STUDIO 表示中は更新できません。
+
+---
+
+## ファイル構成
+
+```
+.
+├── index.html                  # アプリ本体（HTML）
+├── css/                        # スタイル（variables / layout / chord-strum / overlays / layout-modes）
+├── js/                         # アプリのスクリプト（音源・UI・リズム・録音・マニュアル等）
+│   ├── version.js              #   バージョンの唯一の情報源（APP_VERSION）
+│   └── update-check.js         #   アップデート確認・更新
+├── version.json                # サーバー側の最新バージョン（アップデート確認用）
+├── omnitro-capture-worklet.js  # 録音用 AudioWorklet
+├── manifest.json               # PWAマニフェスト
+├── sw.js                       # Service Worker（オフライン対応）
+├── icons/                      # アプリアイコン・ファビコン・OGP画像
+├── tools/bump-version.py       # リリース時のバージョン一括更新スクリプト
+├── LICENSE                     # ライセンス条文
+├── THIRD-PARTY-NOTICES.md      # サードパーティ通知（Tone.js 等）
+├── REFACTOR_NOTES.md           # 開発メモ
+└── README.md                   # このファイル
+```
+
+**リリース手順:** `python3 tools/bump-version.py X.Y.Z` で `js/version.js`・`version.json`・`sw.js`・`index.html` のバージョンをまとめて更新し、**全ファイルを一緒に**デプロイします（`version.json` を更新した時点で、利用者に更新通知が出ます）。
+
+---
+
+## 技術スタックとサードパーティ
+
+- **Web Audio API**（ネイティブ）— ストラムプレート音源・ドラム合成・エフェクト処理
+- **[Tone.js](https://tonejs.github.io/) v14.8.49**（MIT License）— コード保持音・スケジューリング。CDNから改変せず読み込み
+- **Web MIDI API** — MIDIキーボード入力 ／ **Screen Wake Lock API** — 画面スリープ抑制
+- フォント: Orbitron・Share Tech Mono（Google Fonts、SIL OFL 1.1）
+- ビルド工程なし（静的ファイルのみ）。ボイス・ドラム音はすべてコードで合成しており、第三者の音声サンプルは使っていません。
+- サードパーティ部品のライセンス全文は [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) を参照してください。これらはomnitro本体のライセンスの対象ではありません。
 
 ---
 
@@ -105,6 +154,19 @@ Open the in-app manual anytime from the "📖 MANUAL" button in Settings — it'
 ### Running it
 
 Just open the app in a browser, or install it as a PWA for the full offline, home-screen-app experience (see "Installing as a PWA" above).
+
+### Updates
+
+The app compares its own version with `version.json` on the server at startup, periodically, and when you return to the screen. If a newer version exists, a bar appears at the top; tapping it clears the app's cache and reloads. You can also check manually via Settings → HELP → **CHECK FOR UPDATES**. User patterns/kits and settings live in `localStorage` and are kept. Updating is blocked while recording.
+
+**Releasing:** run `python3 tools/bump-version.py X.Y.Z` to update `js/version.js`, `version.json`, `sw.js` and `index.html` together, then deploy **all files at once**.
+
+### Third-party components
+
+- **[Tone.js](https://tonejs.github.io/) v14.8.49** — MIT License, loaded unmodified from a CDN
+- **Orbitron / Share Tech Mono** (Google Fonts) — SIL OFL 1.1
+- Full notices: [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md). These components are under their own licenses, not omnitro's.
+- All voices and drum sounds are synthesized in code; no third-party audio samples are used.
 
 ### Tech stack
 

@@ -880,3 +880,43 @@
     color: var(--text-bright);
   }
 
+
+
+/* ─── UPDATE BANNER（js/update-check.js）────────────────────────────────────
+   新しいバージョンがある時だけ画面上部に出る。全オーバーレイより前面。 */
+#update-banner {
+  display: none;
+  position: fixed;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  z-index: 9500;
+  align-items: stretch;
+  background: #1a1400;
+  border-bottom: 1px solid var(--accent1);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+#update-banner-main {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  background: transparent;
+  border: none;
+  color: var(--accent1);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-align: left;
+  cursor: pointer;
+}
+#update-banner-close {
+  flex-shrink: 0;
+  width: 36px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid #3a2e00;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
