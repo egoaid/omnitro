@@ -2,8 +2,8 @@
 
 // デプロイ確認用バージョンマーカー。ブラウザのコンソールにこの行が表示されて
 // いれば、最新のJSファイル一式が（キャッシュではなく）実際に読み込まれている。
-window._omniBuild = 'v1.5.46';
-console.log('%c[omnitro] build: v1.5.46 — RANDOM後の無音（テンポ変更時のSWAP開始tickずれ）を修正。RHYTHM DEBUG継続', 'color:#2ecc71;font-weight:bold;');
+window._omniBuild = 'v1.5.47';
+console.log('%c[omnitro] build: v1.5.47 — 差し替え時のグリッド遅れ(6〜56ms)を修正（Sequence再構築をやめ索引のみ差し替え）。RHYTHM DEBUG継続', 'color:#2ecc71;font-weight:bold;');
 
 buildChordGrid();
 buildSimpleChordGrid();

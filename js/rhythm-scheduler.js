@@ -112,6 +112,10 @@ function waitBars(n, cb) {
 }
 
 // ── メインシーケンサー ──────────────────────────────────────────────────────────
+// 現在のSequenceが参照するパターン索引。同じ長さのパターンへの差し替えは、
+// Sequenceを作り直さず、この holder.idx を入れ替えるだけで行う（v1.5.47）。
+let rhythmHolder = null;
+
 function startRhythm(patternOverride) {
   rdbgStage('startRhythm 開始 bpm=' + state.tempo);
   if (rhythmLoop) { rhythmLoop.dispose(); }
@@ -168,6 +172,8 @@ function startRhythm(patternOverride) {
     tamb:  buildIndex(groove.tamb),
     shkr:  buildIndex(groove.shkr),
   };
+  const holder = { idx, steps };
+  rhythmHolder = holder;
 
   // ── triggerFn per channel ─────────────────────────────────────────────────
   const triggers = {
@@ -200,7 +206,7 @@ function startRhythm(patternOverride) {
     }
 
     for (const ch of ['kick','snare','hat','hiop','rim','cowbl','clap','tamb','shkr']) {
-      const evts = idx[ch][si];
+      const evts = holder.idx[ch][si];
       if (!evts) continue;
       for (const e of evts) {
         if (e.prob < 1.0 && Math.random() > e.prob) continue;
@@ -291,6 +297,21 @@ function swapRhythmPatternLive(patternOverride) {
     shkr:  buildIndex(groove.shkr),
   };
 
+  // ★v1.5.47: 同じステップ数なら、Sequenceを作り直さず索引だけを入れ替える。
+  //   従来は新Sequenceを start() していたため、新ステップ0が「旧ステップ0の予定時刻」ではなく
+  //   Toneの先読み窓の端（最大 updateInterval≒50ms 後）で鳴り、差し替えのたびに
+  //   グリッドが 6〜56ms 遅れていた（v1.5.47のログで計測）。
+  //   ここは小節頭(ステップ0)のコールバック冒頭から呼ばれるので、この後そのまま
+  //   ステップ0が新パターンで「正しい時刻」に鳴る。dispose/start も不要になる。
+  if (rhythmHolder && rhythmHolder.steps === steps) {
+    rhythmHolder.idx = idx;
+    rdbgStage('SWAP: 同一Sequenceのまま索引のみ差し替え（Sequence再構築なし・時刻ずれなし）');
+    return;
+  }
+
+  const holder = { idx, steps };
+  rhythmHolder = holder;
+
   const triggers = {
     kick:  (s, t, v) => { if (kickSynth)  kickSynth.trigger(t, v); },
     snare: (s, t, v) => { if (snareSynth) snareSynth.trigger(t, v); },
@@ -314,7 +335,7 @@ function swapRhythmPatternLive(patternOverride) {
     }
 
     for (const ch of ['kick','snare','hat','hiop','rim','cowbl','clap','tamb','shkr']) {
-      const evts = idx[ch][si];
+      const evts = holder.idx[ch][si];
       if (!evts) continue;
       for (const e of evts) {
         if (e.prob < 1.0 && Math.random() > e.prob) continue;
@@ -340,7 +361,7 @@ function swapRhythmPatternLive(patternOverride) {
   rdbgStage('SWAP: 旧Sequence dispose 開始 (Tick内=' + (window._rdbgInTick ? 'yes' : 'no') + ')');
   oldLoop.dispose();
   rdbgStage('SWAP: 旧Sequence dispose 完了 → 新Sequence start()');
-  // ★v1.5.46 修正: start() を引数なしで呼ぶと、Toneは「Transport経過秒 × 現在のBPM」で
+  // ★v1.5.47 修正: start() を引数なしで呼ぶと、Toneは「Transport経過秒 × 現在のBPM」で
   //   開始tickを換算する。テンポを途中で変えていると、この換算が実際のtickからずれ、
   //   新Sequenceが未来のtickで開始されてしまい、その分（経過時間×テンポ変化量に比例して
   //   数秒〜十数秒）リズムが無音になる。実際のtickを明示して開始すればこのずれは起きない。
